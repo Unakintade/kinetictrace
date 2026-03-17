@@ -142,5 +142,119 @@ export function analyseStrides(poseHistory, pixelsPerMeter, videoDims) {
     }
   }
 
-  return { stanceEvents, strideMetrics, windowedMetrics };
+  // ── Joint angles per frame ──────────────────────────────────────────────
+  const jointAngles = uniqueHistory
+    .filter(f => {
+      const p = f.pose;
+      return p?.leftHip && p?.rightHip && p?.leftKnee && p?.rightKnee && p?.leftAnkle && p?.rightAnkle;
+    })
+    .map(f => {
+      const p = f.pose;
+      return {
+        t: parseFloat(f.t.toFixed(2)),
+        leftKnee:  computeAngle(p.leftHip.x,  p.leftHip.y,  p.leftKnee.x,  p.leftKnee.y,  p.leftAnkle.x,  p.leftAnkle.y),
+        rightKnee: computeAngle(p.rightHip.x, p.rightHip.y, p.rightKnee.x, p.rightKnee.y, p.rightAnkle.x, p.rightAnkle.y),
+        // hip flexion: angle between vertical (above hip) → hip → knee
+        leftHip:   computeAngle(p.leftHip.x,  p.leftHip.y  - 100, p.leftHip.x,  p.leftHip.y,  p.leftKnee.x,  p.leftKnee.y),
+        rightHip:  computeAngle(p.rightHip.x, p.rightHip.y - 100, p.rightHip.x, p.rightHip.y, p.rightKnee.x, p.rightKnee.y),
+      };
+    });
+
+  // ── Ground contact time (from ankle Y peaks) ────────────────────────────
+  // A contact event spans from the frame where the ankle is first "down" to when it lifts.
+  // We use the same peak logic: near-peak frames within ±MIN_STRIDE_DT/2 window.
+  const buildContactDurations = (frames, yNorm, times) => {
+    const threshold = 0.75; // top 25% Y values = foot near ground
+    const maxY = Math.max(...yNorm);
+    const minY = Math.min(...yNorm);
+    const range = Math.max(maxY - minY, 0.01);
+    const norm = yNorm.map(v => (v - minY) / range); // re-normalise within leg
+
+    const contactDurations = [];
+    let inContact = false;
+    let contactStart = null;
+
+    for (let i = 0; i < norm.length; i++) {
+      if (!inContact && norm[i] >= threshold) {
+        inContact = true;
+        contactStart = times[i];
+      } else if (inContact && norm[i] < threshold) {
+        inContact = false;
+        const dur = times[i] - contactStart;
+        if (dur > 0.05 && dur < 2) {
+          contactDurations.push({ t: parseFloat(contactStart.toFixed(2)), duration: parseFloat((dur * 1000).toFixed(0)) }); // ms
+        }
+      }
+    }
+    return contactDurations;
+  };
+
+  const leftContactDurations  = leftFrames.length >= MIN_FRAMES
+    ? buildContactDurations(leftFrames,  smooth(leftYNorm),  leftTimes)
+    : [];
+  const rightContactDurations = rightFrames.length >= MIN_FRAMES
+    ? buildContactDurations(rightFrames, smooth(rightYNorm), rightTimes)
+    : [];
+
+  // ── Velocity & Acceleration ─────────────────────────────────────────────
+  const hipFrames = uniqueHistory.filter(f => f.pose?.leftHip && f.pose?.rightHip);
+  let velocityData = [];
+  if (hipFrames.length >= 2 && pixelsPerMeter) {
+    const rawVel = hipFrames.map((f, i) => {
+      if (i === 0) return 0;
+      const dt = f.t - hipFrames[i-1].t;
+      if (dt <= 0) return 0;
+      const hipX1 = (hipFrames[i-1].pose.leftHip.x + hipFrames[i-1].pose.rightHip.x) / 2;
+      const hipX2 = (f.pose.leftHip.x + f.pose.rightHip.x) / 2;
+      const hipY1 = (hipFrames[i-1].pose.leftHip.y + hipFrames[i-1].pose.rightHip.y) / 2;
+      const hipY2 = (f.pose.leftHip.y + f.pose.rightHip.y) / 2;
+      return Math.hypot(hipX2 - hipX1, hipY2 - hipY1) / pixelsPerMeter / dt;
+    });
+    const smoothVel = smoothArr(rawVel, 7);
+    const accArr = smoothVel.map((v, i) => {
+      if (i === 0) return 0;
+      const dt = hipFrames[i].t - hipFrames[i-1].t;
+      return dt > 0 ? (v - smoothVel[i-1]) / dt : 0;
+    });
+    velocityData = hipFrames.map((f, i) => ({
+      t:    parseFloat(f.t.toFixed(2)),
+      speed: parseFloat(smoothVel[i].toFixed(3)),
+      accel: parseFloat(accArr[i].toFixed(3)),
+    }));
+  }
+
+  // ── Asymmetry ───────────────────────────────────────────────────────────
+  const leftStrides  = computeSameLegStrides(leftPeaks,  leftX);
+  const rightStrides = computeSameLegStrides(rightPeaks, rightX);
+  const avgArr = arr => arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0;
+  const asymPct = (a, b) => { const m = (a + b) / 2; return m === 0 ? 0 : Math.abs(a - b) / m * 100; };
+
+  const leftAvgSL  = avgArr(leftStrides.map(m => m.strideLength));
+  const rightAvgSL = avgArr(rightStrides.map(m => m.strideLength));
+  const leftAvgSF  = avgArr(leftStrides.map(m => m.strideFreq));
+  const rightAvgSF = avgArr(rightStrides.map(m => m.strideFreq));
+  const leftAvgCT  = avgArr(leftContactDurations.map(c => c.duration));
+  const rightAvgCT = avgArr(rightContactDurations.map(c => c.duration));
+
+  const asymmetry = {
+    strideLength:   { pct: asymPct(leftAvgSL, rightAvgSL),  left: leftAvgSL,  right: rightAvgSL  },
+    strideFreq:     { pct: asymPct(leftAvgSF, rightAvgSF),  left: leftAvgSF,  right: rightAvgSF  },
+    contactTime:    { pct: asymPct(leftAvgCT, rightAvgCT),  left: leftAvgCT,  right: rightAvgCT  },
+  };
+
+  const peakSpeed = velocityData.length ? Math.max(...velocityData.map(d => d.speed)) : 0;
+  const avgSpeed  = velocityData.length ? avgArr(velocityData.map(d => d.speed)) : 0;
+
+  return {
+    stanceEvents,
+    strideMetrics,
+    windowedMetrics,
+    jointAngles,
+    leftContactDurations,
+    rightContactDurations,
+    velocityData,
+    asymmetry,
+    peakSpeed: parseFloat(peakSpeed.toFixed(3)),
+    avgSpeed:  parseFloat(avgSpeed.toFixed(3)),
+  };
 }
