@@ -62,7 +62,7 @@ const VelocityCanvas = forwardRef(function VelocityCanvas(
 
     if (videoSource.type === 'upload') {
       video.src = videoSource.url;
-      video.loop = false;
+      video.loop = true;
       video.onloadedmetadata = () => {
         const dims = { w: video.videoWidth, h: video.videoHeight };
         setVideoDims(dims);
