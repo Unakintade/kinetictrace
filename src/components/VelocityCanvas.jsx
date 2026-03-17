@@ -3,7 +3,7 @@ import usePoseDetector from '@/hooks/usePoseDetector';
 import { analyseFrame, warpPoint } from '@/hooks/useHomography';
 
 const VelocityCanvas = forwardRef(function VelocityCanvas(
-  { videoSource, trackingMode, markers, trackedPoints, isTracking, onCanvasClick, onAutoTrackPoint },
+  { videoSource, trackingMode, markers, trackedPoints, isTracking, onCanvasClick, onAutoTrackPoint, onPoseDetected, stanceEvents },
   ref
 ) {
   const canvasRef = useRef(null);
@@ -128,8 +128,11 @@ const VelocityCanvas = forwardRef(function VelocityCanvas(
         const now = Date.now();
         if (now - lastAutoRef.current > 100) {
           lastAutoRef.current = now;
-          detectPerson(video).then(pt => {
-            if (pt) onAutoTrackPoint(pt);
+          detectPerson(video).then(pose => {
+            if (pose) {
+              onAutoTrackPoint(pose.hipCenter);
+              if (onPoseDetected) onPoseDetected(pose);
+            }
           });
         }
       }
@@ -195,6 +198,25 @@ const VelocityCanvas = forwardRef(function VelocityCanvas(
         ctx.setLineDash([4, 4]);
         ctx.stroke();
         ctx.setLineDash([]);
+      }
+
+      // Draw stance events (foot contacts)
+      if (stanceEvents?.length) {
+        const recent = stanceEvents.filter(e => e.t > (video.currentTime - (trackedPoints[0]?.videoT ?? 0) - 0.5));
+        stanceEvents.slice(-6).forEach(e => {
+          const color = e.leg === 'left' ? '#22c55e' : '#f97316';
+          ctx.beginPath();
+          ctx.arc(e.x, e.y, 9, 0, Math.PI * 2);
+          ctx.strokeStyle = color;
+          ctx.lineWidth = 2;
+          ctx.stroke();
+          ctx.fillStyle = color + '33';
+          ctx.fill();
+          ctx.font = 'bold 9px Inter, sans-serif';
+          ctx.fillStyle = color;
+          ctx.textAlign = 'center';
+          ctx.fillText(e.leg === 'left' ? 'L' : 'R', e.x, e.y + 3);
+        });
       }
 
       // Draw tracked path
