@@ -9,7 +9,7 @@ import GaitTimeline from '../components/GaitTimeline';
 import AnkleChart from '../components/AnkleChart';
 import StatsPanel from '../components/StatsPanel';
 import { warpPoint } from '../hooks/useHomography';
-import { detectPose, analyseStrides, StrideData, AnalysisResult } from '../hooks/useStrideAnalyser';
+import { analyseStrides } from '../hooks/useStrideAnalyser';
 import { Activity } from 'lucide-react';
 
 export default function VeloTrack() {
