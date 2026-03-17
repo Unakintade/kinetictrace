@@ -115,7 +115,7 @@ export function analyseStrides(poseHistory, pixelsPerMeter, videoDims) {
       const prev = peaks[i - 1];
       const curr = peaks[i];
       const dt = curr.t - prev.t;
-      if (dt < MIN_STRIDE_DT || dt > 4) continue;
+      if (dt < MIN_STRIDE_DT || dt > 3) continue;
 
       const dx = (xArr[curr.idx] - xArr[prev.idx]) / pixelsPerMeter;
       const dy = (yArr[curr.idx] - yArr[prev.idx]) / pixelsPerMeter;
