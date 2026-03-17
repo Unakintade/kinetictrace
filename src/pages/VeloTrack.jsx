@@ -6,6 +6,7 @@ import TrackingControls from '../components/TrackingControls';
 import VelocityGraph from '../components/VelocityGraph';
 import StrideGraph from '../components/StrideGraph';
 import GaitTimeline from '../components/GaitTimeline';
+import AnkleChart from '../components/AnkleChart';
 import StatsPanel from '../components/StatsPanel';
 import { warpPoint } from '../hooks/useHomography';
 import { analyseStrides } from '../hooks/useStrideAnalyser';
