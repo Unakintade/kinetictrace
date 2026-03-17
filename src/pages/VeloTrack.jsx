@@ -16,6 +16,7 @@ export default function VeloTrack() {
   const [isTracking, setIsTracking] = useState(false);
   const [trackedPoints, setTrackedPoints] = useState([]); // [{x, y, t}]
   const [velocityData, setVelocityData] = useState([]);
+  const [seekTime, setSeekTime] = useState(null);
 
   const canvasRef = useRef(null);
   const trackingIntervalRef = useRef(null);

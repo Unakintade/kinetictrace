@@ -31,9 +31,20 @@ export default function VelocityGraph({ velocityData, onSeek, seekTime }) {
     );
   }
 
+  const handleChartClick = (e) => {
+    if (!onSeek || !e?.activePayload?.length) return;
+    const t = e.activePayload[0]?.payload?.t;
+    if (t != null) onSeek(t);
+  };
+
   return (
     <ResponsiveContainer width="100%" height="100%">
-      <LineChart data={velocityData} margin={{ top: 10, right: 20, left: 0, bottom: 5 }}>
+      <LineChart
+        data={velocityData}
+        margin={{ top: 10, right: 20, left: 0, bottom: 5 }}
+        onClick={handleChartClick}
+        style={{ cursor: onSeek ? 'pointer' : 'default' }}
+      >
         <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.5} />
         <XAxis
           dataKey="t"
@@ -55,6 +66,14 @@ export default function VelocityGraph({ velocityData, onSeek, seekTime }) {
           formatter={(value) => <span style={{ color: 'hsl(var(--muted-foreground))' }}>{value}</span>}
         />
         <ReferenceLine y={0} stroke="hsl(var(--border))" />
+        {seekTime != null && (
+          <ReferenceLine
+            x={seekTime}
+            stroke="hsl(var(--primary))"
+            strokeWidth={2}
+            strokeDasharray="4 2"
+          />
+        )}
         <Line
           type="monotone"
           dataKey="speed"
