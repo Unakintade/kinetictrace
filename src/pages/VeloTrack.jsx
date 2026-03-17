@@ -43,7 +43,7 @@ export default function VeloTrack() {
       const p1 = points[i - 1];
       const p2 = points[i];
       const dt = p2.t - p1.t;
-      if (dt <= 0) continue;
+      if (dt < 0.01) continue; // skip near-zero dt to avoid velocity spikes
 
       // Apply warp correction if camera geometry is available
       const w1 = geo
