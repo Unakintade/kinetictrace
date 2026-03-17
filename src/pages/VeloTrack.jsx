@@ -308,11 +308,11 @@ export default function VeloTrack() {
             </div>
           </div>
 
-          {/* Advanced gait analysis row */}
-          <div className="flex border-t border-border/50 bg-card/30" style={{ height: '18rem' }}>
+          {/* Second row: Joint Angles + Contact Time + Asymmetry + Velocity/Accel */}
+          <div className="flex border-t border-border/50 bg-card/20" style={{ height: '14rem' }}>
             {/* Joint Angles */}
             <div className="flex-1 flex flex-col border-r border-border/50">
-              <div className="px-4 pt-3 pb-1">
+              <div className="px-4 pt-2 pb-1">
                 <p className="text-xs text-muted-foreground uppercase tracking-widest font-medium">Joint Angles</p>
               </div>
               <div className="flex-1 min-h-0 px-2 pb-2">
@@ -321,7 +321,7 @@ export default function VeloTrack() {
             </div>
             {/* Ground Contact Time */}
             <div className="flex-1 flex flex-col border-r border-border/50">
-              <div className="px-4 pt-3 pb-1">
+              <div className="px-4 pt-2 pb-1">
                 <p className="text-xs text-muted-foreground uppercase tracking-widest font-medium">Contact Time</p>
               </div>
               <div className="flex-1 min-h-0 px-2 pb-2">
@@ -335,19 +335,19 @@ export default function VeloTrack() {
             </div>
             {/* Asymmetry */}
             <div className="flex-1 flex flex-col border-r border-border/50">
-              <div className="px-4 pt-3 pb-1">
+              <div className="px-4 pt-2 pb-1">
                 <p className="text-xs text-muted-foreground uppercase tracking-widest font-medium">Asymmetry</p>
               </div>
-              <div className="flex-1 min-h-0">
+              <div className="flex-1 min-h-0 overflow-hidden">
                 <AsymmetryPanel asymmetry={strideAnalysis.asymmetry} />
               </div>
             </div>
             {/* Velocity & Acceleration */}
             <div className="flex-1 flex flex-col">
-              <div className="px-4 pt-3 pb-1">
+              <div className="px-4 pt-2 pb-1">
                 <p className="text-xs text-muted-foreground uppercase tracking-widest font-medium">Velocity & Accel</p>
               </div>
-              <div className="flex-1 min-h-0 pb-2">
+              <div className="flex-1 min-h-0">
                 <VelocityAccelChart
                   velocityData={strideAnalysis.velocityData}
                   peakSpeed={strideAnalysis.peakSpeed}
