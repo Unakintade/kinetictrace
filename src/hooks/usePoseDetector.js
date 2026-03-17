@@ -3,10 +3,6 @@ import * as poseDetection from '@tensorflow-models/pose-detection';
 import '@tensorflow/tfjs-backend-webgl';
 import * as tf from '@tensorflow/tfjs';
 
-// MoveNet Lightning runs internally on a 192×192 grid.
-// All returned keypoint coords are in that space and must be scaled to target dims.
-const MOVENET_INPUT_SIZE = 192;
-
 export default function usePoseDetector() {
   const detectorRef = useRef(null);
   const [ready, setReady] = useState(false);
@@ -29,22 +25,20 @@ export default function usePoseDetector() {
   }, []);
 
   /**
-   * Detects a person in the video frame and returns keypoints scaled to (targetW, targetH).
-   * MoveNet outputs coords in a 192×192 space — we scale them to the canvas resolution.
+   * Detects a person and returns keypoints in the video element's native pixel space.
+   * MoveNet's estimatePoses() already returns coords scaled to the input element's
+   * intrinsic dimensions — no manual rescaling needed.
    */
-  const detectPerson = async (videoEl, targetW = MOVENET_INPUT_SIZE, targetH = MOVENET_INPUT_SIZE) => {
+  const detectPerson = async (videoEl) => {
     if (!detectorRef.current || !videoEl || videoEl.readyState < 2) return null;
     const poses = await detectorRef.current.estimatePoses(videoEl);
     if (!poses || poses.length === 0) return null;
     const kp = poses[0].keypoints;
 
-    const scaleX = targetW / MOVENET_INPUT_SIZE;
-    const scaleY = targetH / MOVENET_INPUT_SIZE;
-
     const get = (name) => {
       const k = kp.find(k => k.name === name);
       if (!k) return null;
-      return { x: k.x * scaleX, y: k.y * scaleY, score: k.score };
+      return { x: k.x, y: k.y, score: k.score };
     };
 
     const leftHip = get('left_hip');
