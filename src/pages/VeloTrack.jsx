@@ -253,7 +253,7 @@ export default function VeloTrack() {
                 </div>
               </div>
               {/* Stride graph */}
-              <div className="flex-1 flex flex-col">
+              <div className="flex-1 flex flex-col border-r border-border/50">
                 <div className="flex items-center justify-between px-4 pt-3 pb-1">
                   <p className="text-xs text-muted-foreground uppercase tracking-widest font-medium">Stride Analysis</p>
                   {strideAnalysis.strideMetrics.length > 0 && (
@@ -269,6 +269,18 @@ export default function VeloTrack() {
                     onSeek={handleSeek}
                     seekTime={seekTime}
                   />
+                </div>
+              </div>
+              {/* Ankle position chart */}
+              <div className="flex-1 flex flex-col">
+                <div className="flex items-center justify-between px-4 pt-3 pb-1">
+                  <p className="text-xs text-muted-foreground uppercase tracking-widest font-medium">Ankle Position</p>
+                  {poseHistory.length > 0 && (
+                    <span className="text-xs text-muted-foreground font-mono">{poseHistory.length} frames</span>
+                  )}
+                </div>
+                <div className="flex-1 min-h-0 px-2 pb-2">
+                  <AnkleChart poseHistory={poseHistory} onSeek={handleSeek} seekTime={seekTime} />
                 </div>
               </div>
             </div>
