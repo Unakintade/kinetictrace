@@ -11,17 +11,14 @@ const MIN_FRAMES = 5;         // minimum confident ankle frames per leg
  * Find local maxima in a smoothed Y array with prominence filtering.
  * Window ±2 keeps sensitivity while avoiding noise.
  */
-function findPeaks(values, times, minProminence = 0.03) {
+function findPeaks(values, times, minProminence = 0.01) {
   const peaks = [];
   const n = values.length;
-  for (let i = 2; i < n - 2; i++) {
+  for (let i = 1; i < n - 1; i++) {
     const v = values[i];
-    if (
-      v > values[i - 1] && v > values[i + 1] &&
-      v > values[i - 2] && v > values[i + 2]
-    ) {
-      const leftMin = Math.min(values[i - 1], values[i - 2]);
-      const rightMin = Math.min(values[i + 1], values[i + 2]);
+    if (v > values[i - 1] && v > values[i + 1]) {
+      const leftMin = values[i - 1];
+      const rightMin = values[i + 1];
       const prominence = v - Math.max(leftMin, rightMin);
       if (prominence >= minProminence) {
         if (peaks.length === 0 || times[i] - peaks[peaks.length - 1].t >= MIN_STRIDE_DT) {
