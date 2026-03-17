@@ -20,6 +20,7 @@ export default function VeloTrack() {
   const [velocityData, setVelocityData] = useState([]);
   const [seekTime, setSeekTime] = useState(null);
   const [poseHistory, setPoseHistory] = useState([]); // [{t, pose}]
+  const [videoDims, setVideoDims] = useState({ w: 640, h: 360 });
 
   const canvasRef = useRef(null);
   const trackingIntervalRef = useRef(null);
@@ -75,12 +76,8 @@ export default function VeloTrack() {
 
   // Compute stride analysis from pose history
   const strideAnalysis = useMemo(() => {
-    const { w, h } = (() => {
-      const canvas = canvasRef.current?.getCanvas?.();
-      return canvas ? { w: canvas.width, h: canvas.height } : { w: 640, h: 360 };
-    })();
-    return analyseStrides(poseHistory, pixelsPerMeter, { w, h });
-  }, [poseHistory, pixelsPerMeter]);
+    return analyseStrides(poseHistory, pixelsPerMeter, videoDims);
+  }, [poseHistory, pixelsPerMeter, videoDims]);
 
   const handlePoseDetected = useCallback((pose) => {
     const now = (Date.now() - startTimeRef.current) / 1000;
@@ -212,6 +209,7 @@ export default function VeloTrack() {
                 onCanvasClick={handleCanvasClick}
                 onAutoTrackPoint={handleAutoTrackPoint}
                 onPoseDetected={handlePoseDetected}
+                onVideoDims={setVideoDims}
                 stanceEvents={strideAnalysis.stanceEvents}
               />
             ) : (
