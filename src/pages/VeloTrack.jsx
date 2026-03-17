@@ -66,7 +66,7 @@ export default function VeloTrack() {
       });
     }
     return data;
-  }, [pixelsPerMeter]);
+  }, [pixelsPerMeter, videoDims]);
 
   // Compute stride analysis from pose history
   const strideAnalysis = useMemo(() => {
