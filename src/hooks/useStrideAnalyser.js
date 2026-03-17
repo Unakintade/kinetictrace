@@ -72,9 +72,9 @@ export function analyseStrides(poseHistory, pixelsPerMeter, videoDims) {
   const leftY = leftFrames.map(f => f.pose.leftAnkle.y);
   const rightY = rightFrames.map(f => f.pose.rightAnkle.y);
 
-  // Smooth Y signal (5-point moving average) to reduce jitter
+  // Smooth Y signal (7-point moving average) to suppress jitter before peak detection
   const smooth = (arr) => arr.map((v, i) => {
-    const slice = arr.slice(Math.max(0, i - 2), Math.min(arr.length, i + 3));
+    const slice = arr.slice(Math.max(0, i - 3), Math.min(arr.length, i + 4));
     return slice.reduce((a, b) => a + b, 0) / slice.length;
   });
 
