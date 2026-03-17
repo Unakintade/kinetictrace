@@ -134,7 +134,7 @@ const VelocityCanvas = forwardRef(function VelocityCanvas(
         const now = Date.now();
         if (now - lastAutoRef.current > 100) {
           lastAutoRef.current = now;
-          detectPerson(video, w, h).then(pose => {
+          detectPerson(video).then(pose => {
             if (!pose) return;
             onAutoTrackPoint(pose.hipCenter);
             if (onPoseDetected) onPoseDetected(pose);
