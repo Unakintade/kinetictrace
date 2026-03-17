@@ -31,6 +31,55 @@ export async function detectPose(videoElement) {
   return detector.estimatePoses(videoElement);
 }
 
+export default function usePoseDetector() {
+  const detectorRef = useRef(null);
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const d = await initPoseDetector();
+      if (!cancelled) {
+        detectorRef.current = d;
+        setReady(true);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  const detectPerson = async (videoEl) => {
+    if (!detectorRef.current || !videoEl || videoEl.readyState < 2) return null;
+    const poses = await detectorRef.current.estimatePoses(videoEl);
+    if (!poses || poses.length === 0) return null;
+    const kp = poses[0].keypoints;
+
+    const get = (name) => {
+      const k = kp.find(k => k.name === name);
+      if (!k) return null;
+      return { x: k.x, y: k.y, score: k.score };
+    };
+
+    const leftHip = get('left_hip');
+    const rightHip = get('right_hip');
+    if (!leftHip || !rightHip || leftHip.score < 0.1 || rightHip.score < 0.1) return null;
+
+    return {
+      hipCenter: {
+        x: (leftHip.x + rightHip.x) / 2,
+        y: (leftHip.y + rightHip.y) / 2,
+      },
+      leftHip,
+      rightHip,
+      leftKnee: get('left_knee'),
+      rightKnee: get('right_knee'),
+      leftAnkle: get('left_ankle'),
+      rightAnkle: get('right_ankle'),
+    };
+  };
+
+  return { ready, detectPerson };
+}
+
 // Compute angle at vertex B given points A, B, C (in degrees)
 function computeAngle(ax, ay, bx, by, cx, cy) {
   const abx = ax - bx;
