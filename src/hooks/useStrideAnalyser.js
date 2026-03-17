@@ -60,7 +60,7 @@ export function analyseStrides(poseHistory, pixelsPerMeter, videoDims) {
   const leftFrames  = uniqueHistory.filter(f => f.pose?.leftAnkle?.score  > 0.2);
   const rightFrames = uniqueHistory.filter(f => f.pose?.rightAnkle?.score > 0.2);
 
-  if (leftFrames.length < MIN_FRAMES || rightFrames.length < MIN_FRAMES) {
+  if (leftFrames.length < MIN_FRAMES && rightFrames.length < MIN_FRAMES) {
     return { stanceEvents: [], strideMetrics: [], windowedMetrics: [] };
   }
 
