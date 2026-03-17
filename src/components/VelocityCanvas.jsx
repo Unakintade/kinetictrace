@@ -7,6 +7,7 @@ const VelocityCanvas = forwardRef(function VelocityCanvas(
   ref
 ) {
   const canvasRef = useRef(null);
+  const latestPoseRef = useRef(null);
   const videoRef = useRef(null);
   const animFrameRef = useRef(null);
   const lastAutoRef = useRef(0);
