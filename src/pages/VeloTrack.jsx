@@ -38,14 +38,13 @@ export default function VeloTrack() {
     if (points.length < 2 || !pixelsPerMeter) return [];
     const geo = canvasRef.current?.getCameraGeo?.();
     const { w, h } = videoDims;
-    const data = [];
+    const raw = [];
     for (let i = 1; i < points.length; i++) {
       const p1 = points[i - 1];
       const p2 = points[i];
       const dt = p2.t - p1.t;
-      if (dt < 0.01) continue; // skip near-zero dt to avoid velocity spikes
+      if (dt < 0.01) continue;
 
-      // Apply warp correction if camera geometry is available
       const w1 = geo
         ? warpPoint(p1.x, p1.y, w, h, geo.tiltAngle, geo.pitchFactor, geo.vanishingPoint)
         : p1;
@@ -58,14 +57,24 @@ export default function VeloTrack() {
       const vx = dx / dt;
       const vy = dy / dt;
       const speed = Math.hypot(vx, vy);
-      data.push({
+      raw.push({
         t: parseFloat(p2.t.toFixed(2)),
         vx: parseFloat(vx.toFixed(4)),
         vy: parseFloat(vy.toFixed(4)),
         speed: parseFloat(speed.toFixed(4)),
       });
     }
-    return data;
+
+    // IQR outlier filter on speed — remove spikes beyond Q3 + 1.5×IQR
+    if (raw.length >= 4) {
+      const sorted = [...raw.map(d => d.speed)].sort((a, b) => a - b);
+      const q1 = sorted[Math.floor(sorted.length * 0.25)];
+      const q3 = sorted[Math.floor(sorted.length * 0.75)];
+      const iqr = q3 - q1;
+      const upper = q3 + 1.5 * iqr;
+      return raw.filter(d => d.speed <= upper);
+    }
+    return raw;
   }, [pixelsPerMeter, videoDims]);
 
   // Compute stride analysis from pose history
