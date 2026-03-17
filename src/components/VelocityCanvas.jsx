@@ -205,6 +205,31 @@ const VelocityCanvas = forwardRef(function VelocityCanvas(
         ctx.setLineDash([]);
       }
 
+      // Draw ankle markers from latest pose
+      if (isTracking && trackingMode === 'track') {
+        const latestPose = canvasRef._latestPose;
+        if (latestPose) {
+          const ankles = [
+            { kp: latestPose.leftAnkle,  color: '#22c55e', label: 'LA' },
+            { kp: latestPose.rightAnkle, color: '#f97316', label: 'RA' },
+          ];
+          ankles.forEach(({ kp, color, label }) => {
+            if (!kp || kp.score < 0.2) return;
+            ctx.beginPath();
+            ctx.arc(kp.x, kp.y, 7, 0, Math.PI * 2);
+            ctx.fillStyle = color + '44';
+            ctx.fill();
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            ctx.font = 'bold 9px Inter, sans-serif';
+            ctx.fillStyle = color;
+            ctx.textAlign = 'center';
+            ctx.fillText(label, kp.x, kp.y - 10);
+          });
+        }
+      }
+
       // Draw stance events (foot contacts)
       if (stanceEvents?.length) {
         stanceEvents.slice(-6).forEach(e => {
