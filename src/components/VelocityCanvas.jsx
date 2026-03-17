@@ -3,7 +3,7 @@ import usePoseDetector from '@/hooks/usePoseDetector';
 import { analyseFrame, warpPoint } from '@/hooks/useHomography';
 
 const VelocityCanvas = forwardRef(function VelocityCanvas(
-  { videoSource, trackingMode, markers, trackedPoints, isTracking, onCanvasClick, onAutoTrackPoint, onPoseDetected, stanceEvents },
+  { videoSource, trackingMode, markers, trackedPoints, isTracking, onCanvasClick, onAutoTrackPoint, onPoseDetected, onVideoDims, stanceEvents },
   ref
 ) {
   const canvasRef = useRef(null);
@@ -64,7 +64,9 @@ const VelocityCanvas = forwardRef(function VelocityCanvas(
       video.src = videoSource.url;
       video.loop = true;
       video.onloadedmetadata = () => {
-        setVideoDims({ w: video.videoWidth, h: video.videoHeight });
+        const dims = { w: video.videoWidth, h: video.videoHeight };
+        setVideoDims(dims);
+        if (onVideoDims) onVideoDims(dims);
       };
       video.onseeked = () => analyseCamera();
       video.load();
@@ -72,7 +74,9 @@ const VelocityCanvas = forwardRef(function VelocityCanvas(
       video.srcObject = videoSource.stream;
       video.controls = false;
       video.onloadedmetadata = () => {
-        setVideoDims({ w: video.videoWidth, h: video.videoHeight });
+        const dims = { w: video.videoWidth, h: video.videoHeight };
+        setVideoDims(dims);
+        if (onVideoDims) onVideoDims(dims);
         video.play();
       };
     }
@@ -129,10 +133,22 @@ const VelocityCanvas = forwardRef(function VelocityCanvas(
         if (now - lastAutoRef.current > 100) {
           lastAutoRef.current = now;
           detectPerson(video).then(pose => {
-            if (pose) {
-              onAutoTrackPoint(pose.hipCenter);
-              if (onPoseDetected) onPoseDetected(pose);
-            }
+            if (!pose) return;
+            // MoveNet returns coords in video's natural resolution — scale to canvas dims
+            const scaleX = w / (video.videoWidth || w);
+            const scaleY = h / (video.videoHeight || h);
+            const scalePt = (pt) => pt ? { ...pt, x: pt.x * scaleX, y: pt.y * scaleY } : null;
+            const scaledPose = {
+              hipCenter: scalePt(pose.hipCenter),
+              leftAnkle: scalePt(pose.leftAnkle),
+              rightAnkle: scalePt(pose.rightAnkle),
+              leftKnee: scalePt(pose.leftKnee),
+              rightKnee: scalePt(pose.rightKnee),
+              leftHip: scalePt(pose.leftHip),
+              rightHip: scalePt(pose.rightHip),
+            };
+            onAutoTrackPoint(scaledPose.hipCenter);
+            if (onPoseDetected) onPoseDetected(scaledPose);
           });
         }
       }
@@ -263,7 +279,7 @@ const VelocityCanvas = forwardRef(function VelocityCanvas(
 
     animFrameRef.current = requestAnimationFrame(draw);
     return () => cancelAnimationFrame(animFrameRef.current);
-  }, [markers, trackedPoints, videoDims, isTracking, trackingMode, poseReady, cameraGeo]);
+  }, [markers, trackedPoints, videoDims, isTracking, trackingMode, poseReady, cameraGeo, onAutoTrackPoint, onPoseDetected, stanceEvents]);
 
   const handleClick = (e) => {
     const canvas = canvasRef.current;
