@@ -5,6 +5,7 @@ import MarkerSetup from '../components/MarkerSetup';
 import TrackingControls from '../components/TrackingControls';
 import VelocityGraph from '../components/VelocityGraph';
 import StatsPanel from '../components/StatsPanel';
+import { warpPoint } from '../hooks/useHomography';
 import { Activity } from 'lucide-react';
 
 export default function VeloTrack() {
