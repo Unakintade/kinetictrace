@@ -25,7 +25,7 @@ const VelocityCanvas = forwardRef(function VelocityCanvas(
       video.loop = true;
       video.onloadedmetadata = () => {
         setVideoDims({ w: video.videoWidth, h: video.videoHeight });
-        video.play();
+        // Don't auto-play — user controls playback via Track Object mode
       };
       video.load();
     } else if (videoSource.type === 'webcam') {
