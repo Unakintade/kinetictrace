@@ -202,7 +202,6 @@ const VelocityCanvas = forwardRef(function VelocityCanvas(
 
       // Draw stance events (foot contacts)
       if (stanceEvents?.length) {
-        const recent = stanceEvents.filter(e => e.t > (video.currentTime - (trackedPoints[0]?.videoT ?? 0) - 0.5));
         stanceEvents.slice(-6).forEach(e => {
           const color = e.leg === 'left' ? '#22c55e' : '#f97316';
           ctx.beginPath();
