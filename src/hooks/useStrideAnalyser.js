@@ -51,8 +51,8 @@ export function analyseStrides(poseHistory, pixelsPerMeter, videoDims) {
   const frameH = videoDims?.h || 360;
 
   // Build per-leg ankle time series normalised by frame height
-  const leftFrames = poseHistory.filter(f => f.pose?.leftAnkle?.score > 0.3);
-  const rightFrames = poseHistory.filter(f => f.pose?.rightAnkle?.score > 0.3);
+  const leftFrames = poseHistory.filter(f => f.pose?.leftAnkle?.score > 0.15);
+  const rightFrames = poseHistory.filter(f => f.pose?.rightAnkle?.score > 0.15);
 
   if (leftFrames.length < MIN_FRAMES || rightFrames.length < MIN_FRAMES) {
     return { stanceEvents: [], strideMetrics: [], windowedMetrics: [] };
