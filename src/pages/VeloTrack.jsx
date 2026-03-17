@@ -132,6 +132,10 @@ export default function VeloTrack() {
     setTrackedPoints([]);
     setVelocityData([]);
     setPoseHistory([]);
+    // Clear any stale pose history from previous loop
+    canvasRef.current?.getVideo?.()?.addEventListener('seeked', () => {
+      setPoseHistory([]);
+    }, { once: true });
   };
 
   const stopTracking = () => {
