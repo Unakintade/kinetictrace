@@ -86,13 +86,13 @@ export default function VeloTrack() {
   }, [getVideoTime]);
 
   const addPoint = useCallback(({ x, y }) => {
-    const now = getVideoTime();
+    const t = getVideoTime();
     setTrackedPoints(prev => {
-      const next = [...prev, { x, y, t: now }];
+      const next = [...prev, { x, y, t }];
       setVelocityData(computeVelocity(next));
       return next;
     });
-  }, [computeVelocity]);
+  }, [computeVelocity, getVideoTime]);
 
   const handleCanvasClick = useCallback(({ x, y }) => {
     if (trackingMode === 'marker') {
