@@ -1,5 +1,6 @@
-import { useRef, useEffect, useImperativeHandle, forwardRef, useState } from 'react';
+import { useRef, useEffect, useImperativeHandle, forwardRef, useState, useCallback } from 'react';
 import usePoseDetector from '@/hooks/usePoseDetector';
+import { analyseFrame, warpPoint } from '@/hooks/useHomography';
 
 const VelocityCanvas = forwardRef(function VelocityCanvas(
   { videoSource, trackingMode, markers, trackedPoints, isTracking, onCanvasClick, onAutoTrackPoint },
@@ -10,12 +11,42 @@ const VelocityCanvas = forwardRef(function VelocityCanvas(
   const animFrameRef = useRef(null);
   const lastAutoRef = useRef(0);
   const [videoDims, setVideoDims] = useState({ w: 640, h: 360 });
+  const [cameraGeo, setCameraGeo] = useState(null); // { vanishingPoint, tiltAngle, pitchFactor, segments }
   const { ready: poseReady, detectPerson } = usePoseDetector();
 
   useImperativeHandle(ref, () => ({
     getCanvas: () => canvasRef.current,
     getVideo: () => videoRef.current,
+    getCameraGeo: () => cameraGeo,
   }));
+
+  // Analyse camera geometry once when video is ready (or on demand)
+  const analyseCamera = useCallback(() => {
+    const canvas = canvasRef.current;
+    const video = videoRef.current;
+    if (!canvas || !video || video.readyState < 2) return;
+    const w = videoDims.w;
+    const h = videoDims.h;
+    // Draw current frame to a temp canvas for pixel access
+    const tmp = document.createElement('canvas');
+    tmp.width = Math.min(w, 320); // downscale for speed
+    tmp.height = Math.round(Math.min(w, 320) * h / w);
+    const tctx = tmp.getContext('2d');
+    tctx.drawImage(video, 0, 0, tmp.width, tmp.height);
+    const imageData = tctx.getImageData(0, 0, tmp.width, tmp.height);
+    const geo = analyseFrame(imageData, tmp.width, tmp.height);
+    // Scale vanishing point back to original resolution
+    const scale = w / tmp.width;
+    if (geo.vanishingPoint) {
+      geo.vanishingPoint.x *= scale;
+      geo.vanishingPoint.y *= scale;
+    }
+    geo.segments = geo.segments.map(s => ({
+      x1: s.x1 * scale, y1: s.y1 * scale,
+      x2: s.x2 * scale, y2: s.y2 * scale,
+    }));
+    setCameraGeo(geo);
+  }, [videoDims]);
 
   // Setup video element
   useEffect(() => {
@@ -29,6 +60,7 @@ const VelocityCanvas = forwardRef(function VelocityCanvas(
       video.onloadedmetadata = () => {
         setVideoDims({ w: video.videoWidth, h: video.videoHeight });
       };
+      video.onseeked = () => analyseCamera();
       video.load();
     } else if (videoSource.type === 'webcam') {
       video.srcObject = videoSource.stream;
@@ -43,6 +75,13 @@ const VelocityCanvas = forwardRef(function VelocityCanvas(
       if (video.srcObject) video.srcObject = null;
     };
   }, [videoSource]);
+
+  // Analyse once dims are known
+  useEffect(() => {
+    if (videoDims.w > 0) {
+      setTimeout(analyseCamera, 500);
+    }
+  }, [videoDims]);
 
   // Play/pause based on tracking state
   useEffect(() => {
@@ -61,23 +100,24 @@ const VelocityCanvas = forwardRef(function VelocityCanvas(
     const video = videoRef.current;
     if (!canvas || !video) return;
     const ctx = canvas.getContext('2d');
+    const { w, h } = videoDims;
 
     const draw = async () => {
-      canvas.width = videoDims.w;
-      canvas.height = videoDims.h;
+      canvas.width = w;
+      canvas.height = h;
 
       if (video.readyState >= 2) {
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        ctx.drawImage(video, 0, 0, w, h);
       } else {
         ctx.fillStyle = 'hsl(220 18% 9%)';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillRect(0, 0, w, h);
         ctx.fillStyle = 'hsl(210 15% 35%)';
         ctx.font = '16px Inter, sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText('Waiting for video...', canvas.width / 2, canvas.height / 2);
+        ctx.fillText('Waiting for video...', w / 2, h / 2);
       }
 
-      // Auto pose detection: sample every ~100ms when tracking
+      // Auto pose detection every ~100ms when tracking
       if (isTracking && trackingMode === 'track' && poseReady && video.readyState >= 2) {
         const now = Date.now();
         if (now - lastAutoRef.current > 100) {
@@ -86,6 +126,38 @@ const VelocityCanvas = forwardRef(function VelocityCanvas(
             if (pt) onAutoTrackPoint(pt);
           });
         }
+      }
+
+      // Draw detected lines overlay (subtle)
+      if (cameraGeo?.segments?.length) {
+        ctx.strokeStyle = 'rgba(255, 220, 0, 0.15)';
+        ctx.lineWidth = 1;
+        cameraGeo.segments.slice(0, 10).forEach(s => {
+          ctx.beginPath();
+          ctx.moveTo(s.x1, s.y1);
+          ctx.lineTo(s.x2, s.y2);
+          ctx.stroke();
+        });
+      }
+
+      // Draw vanishing point
+      if (cameraGeo?.vanishingPoint) {
+        const vp = cameraGeo.vanishingPoint;
+        ctx.beginPath();
+        ctx.arc(vp.x, vp.y, 8, 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(255, 220, 0, 0.7)';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(vp.x - 14, vp.y); ctx.lineTo(vp.x + 14, vp.y);
+        ctx.moveTo(vp.x, vp.y - 14); ctx.lineTo(vp.x, vp.y + 14);
+        ctx.strokeStyle = 'rgba(255, 220, 0, 0.5)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        ctx.font = 'bold 10px Inter, sans-serif';
+        ctx.fillStyle = 'rgba(255, 220, 0, 0.9)';
+        ctx.textAlign = 'left';
+        ctx.fillText('VP', vp.x + 10, vp.y - 5);
       }
 
       // Draw calibration markers
@@ -108,7 +180,6 @@ const VelocityCanvas = forwardRef(function VelocityCanvas(
         ctx.fillText(`M${i + 1}`, m.x + 10, m.y - 8);
       });
 
-      // Draw calibration line
       if (markers.length === 2) {
         ctx.beginPath();
         ctx.moveTo(markers[0].x, markers[0].y);
@@ -132,7 +203,6 @@ const VelocityCanvas = forwardRef(function VelocityCanvas(
         ctx.stroke();
       }
 
-      // Draw tracked points
       trackedPoints.forEach((p, i) => {
         const isLast = i === trackedPoints.length - 1;
         ctx.beginPath();
@@ -146,12 +216,19 @@ const VelocityCanvas = forwardRef(function VelocityCanvas(
         }
       });
 
-      // Pose-ready indicator
+      // Status overlay
+      ctx.font = 'bold 11px Inter, sans-serif';
+      ctx.textAlign = 'right';
+      ctx.fillStyle = poseReady ? '#22c55e' : '#f97316';
       if (trackingMode === 'track') {
-        ctx.font = 'bold 11px Inter, sans-serif';
-        ctx.textAlign = 'right';
-        ctx.fillStyle = poseReady ? '#22c55e' : '#f97316';
-        ctx.fillText(poseReady ? '● AI Ready' : '● Loading AI...', canvas.width - 10, 20);
+        ctx.fillText(poseReady ? '● AI Ready' : '● Loading AI...', w - 10, 20);
+      }
+      if (cameraGeo) {
+        ctx.fillStyle = 'rgba(255,220,0,0.8)';
+        ctx.fillText(
+          `tilt ${cameraGeo.tiltAngle.toFixed(1)}° | pitch ×${cameraGeo.pitchFactor.toFixed(2)}`,
+          w - 10, 36
+        );
       }
 
       animFrameRef.current = requestAnimationFrame(draw);
@@ -159,7 +236,7 @@ const VelocityCanvas = forwardRef(function VelocityCanvas(
 
     animFrameRef.current = requestAnimationFrame(draw);
     return () => cancelAnimationFrame(animFrameRef.current);
-  }, [markers, trackedPoints, videoDims, isTracking, trackingMode, poseReady]);
+  }, [markers, trackedPoints, videoDims, isTracking, trackingMode, poseReady, cameraGeo]);
 
   const handleClick = (e) => {
     const canvas = canvasRef.current;
@@ -177,11 +254,18 @@ const VelocityCanvas = forwardRef(function VelocityCanvas(
       <canvas
         ref={canvasRef}
         onClick={handleClick}
-        className={`w-full rounded-lg border border-border/50 ${
-          trackingMode === 'marker' ? 'canvas-crosshair' : 'canvas-crosshair'
-        }`}
+        className="w-full rounded-lg border border-border/50 canvas-crosshair"
         style={{ background: 'hsl(220 18% 9%)' }}
       />
+      {cameraGeo && (
+        <button
+          onClick={analyseCamera}
+          className="absolute top-2 left-2 text-xs bg-black/60 hover:bg-black/80 text-yellow-300 border border-yellow-500/40 rounded px-2 py-1"
+          title="Re-analyse camera angle"
+        >
+          ↺ Re-analyse
+        </button>
+      )}
     </div>
   );
 });
