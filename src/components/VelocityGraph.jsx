@@ -16,7 +16,7 @@ const CustomTooltip = ({ active, payload, label }) => {
   );
 };
 
-export default function VelocityGraph({ velocityData }) {
+export default function VelocityGraph({ velocityData, onSeek, seekTime }) {
   if (!velocityData || velocityData.length < 2) {
     return (
       <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
