@@ -62,11 +62,13 @@ const VelocityCanvas = forwardRef(function VelocityCanvas(
 
     if (videoSource.type === 'upload') {
       video.src = videoSource.url;
-      video.loop = true;
+      video.loop = false;
       video.onloadedmetadata = () => {
         const dims = { w: video.videoWidth, h: video.videoHeight };
         setVideoDims(dims);
         if (onVideoDims) onVideoDims(dims);
+        video.pause();
+        video.currentTime = 0;
       };
       video.onseeked = () => analyseCamera();
       video.load();
