@@ -4,8 +4,8 @@
  * Between consecutive same-leg peaks = one full stride.
  */
 
-const MIN_STRIDE_DT = 0.25;  // minimum seconds between same-leg footstrikes
-const MIN_FRAMES = 10;        // minimum confident ankle frames per leg
+const MIN_STRIDE_DT = 0.2;   // minimum seconds between same-leg footstrikes
+const MIN_FRAMES = 5;         // minimum confident ankle frames per leg
 
 /**
  * Find local maxima in a smoothed Y array with prominence filtering.
