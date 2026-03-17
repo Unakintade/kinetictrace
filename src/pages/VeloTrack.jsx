@@ -121,8 +121,6 @@ export default function VeloTrack() {
   };
 
   const startTracking = () => {
-    const video = canvasRef.current?.getVideo?.();
-    seekVideoStartRef.current = video?.currentTime ?? 0;
     startTimeRef.current = Date.now();
     setIsTracking(true);
     setTrackedPoints([]);
