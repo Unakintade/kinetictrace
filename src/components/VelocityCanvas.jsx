@@ -44,6 +44,17 @@ const VelocityCanvas = forwardRef(function VelocityCanvas(
     };
   }, [videoSource]);
 
+  // Play/pause based on tracking state
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !videoSource || videoSource.type !== 'upload') return;
+    if (trackingMode === 'track' && isTracking) {
+      video.play();
+    } else {
+      video.pause();
+    }
+  }, [trackingMode, isTracking, videoSource]);
+
   // Draw loop
   useEffect(() => {
     const canvas = canvasRef.current;
