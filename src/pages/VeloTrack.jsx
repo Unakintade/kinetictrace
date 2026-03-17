@@ -1,11 +1,13 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback, useMemo } from 'react';
 import VideoSource from '../components/VideoSource';
 import VelocityCanvas from '../components/VelocityCanvas';
 import MarkerSetup from '../components/MarkerSetup';
 import TrackingControls from '../components/TrackingControls';
 import VelocityGraph from '../components/VelocityGraph';
+import StrideGraph from '../components/StrideGraph';
 import StatsPanel from '../components/StatsPanel';
 import { warpPoint } from '../hooks/useHomography';
+import { analyseStrides } from '../hooks/useStrideAnalyser';
 import { Activity } from 'lucide-react';
 
 export default function VeloTrack() {
@@ -17,6 +19,7 @@ export default function VeloTrack() {
   const [trackedPoints, setTrackedPoints] = useState([]); // [{x, y, t}]
   const [velocityData, setVelocityData] = useState([]);
   const [seekTime, setSeekTime] = useState(null);
+  const [poseHistory, setPoseHistory] = useState([]); // [{t, pose}]
 
   const canvasRef = useRef(null);
   const trackingIntervalRef = useRef(null);
@@ -70,6 +73,20 @@ export default function VeloTrack() {
     return data;
   }, [pixelsPerMeter]);
 
+  // Compute stride analysis from pose history
+  const strideAnalysis = useMemo(() => {
+    const { w, h } = (() => {
+      const canvas = canvasRef.current?.getCanvas?.();
+      return canvas ? { w: canvas.width, h: canvas.height } : { w: 640, h: 360 };
+    })();
+    return analyseStrides(poseHistory, pixelsPerMeter, { w, h });
+  }, [poseHistory, pixelsPerMeter]);
+
+  const handlePoseDetected = useCallback((pose) => {
+    const now = (Date.now() - startTimeRef.current) / 1000;
+    setPoseHistory(prev => [...prev, { t: now, pose }]);
+  }, []);
+
   const addPoint = useCallback(({ x, y }) => {
     const now = (Date.now() - startTimeRef.current) / 1000;
     setTrackedPoints(prev => {
@@ -112,6 +129,7 @@ export default function VeloTrack() {
     setIsTracking(true);
     setTrackedPoints([]);
     setVelocityData([]);
+    setPoseHistory([]);
   };
 
   const stopTracking = () => {
@@ -124,6 +142,7 @@ export default function VeloTrack() {
     setTrackedPoints([]);
     setVelocityData([]);
     setMarkers([]);
+    setPoseHistory([]);
     setTrackingMode('marker');
   };
 
