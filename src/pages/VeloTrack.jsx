@@ -33,17 +33,11 @@ export default function VeloTrack() {
 
   const isCalibrated = markers.length === 2 && pixelsPerMeter > 0;
 
-  // Get video dims from canvas ref for warp
-  const getVideoDims = () => {
-    const canvas = canvasRef.current?.getCanvas?.();
-    return canvas ? { w: canvas.width, h: canvas.height } : { w: 640, h: 360 };
-  };
-
   // Compute velocity from tracked points, applying homography warp correction
   const computeVelocity = useCallback((points) => {
     if (points.length < 2 || !pixelsPerMeter) return [];
     const geo = canvasRef.current?.getCameraGeo?.();
-    const { w, h } = getVideoDims();
+    const { w, h } = videoDims;
     const data = [];
     for (let i = 1; i < points.length; i++) {
       const p1 = points[i - 1];
