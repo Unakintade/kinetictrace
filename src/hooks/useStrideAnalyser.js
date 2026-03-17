@@ -7,27 +7,28 @@
  */
 
 // Minimum time between footstrikes (seconds) — prevents double-counting
-const MIN_STRIDE_DT = 0.25;
+const MIN_STRIDE_DT = 0.3;
 // Minimum number of pose frames required
-const MIN_FRAMES = 8;
+const MIN_FRAMES = 15;
 
 /**
  * Find local maxima in Y array (high Y = foot near ground in image coords).
- * Uses a simple peak-finding with a minimum prominence.
+ * Uses a wider window (±3) and stronger prominence to avoid false peaks.
  */
-function findPeaks(values, times, minProminence = 0.03) {
+function findPeaks(values, times, minProminence = 0.04) {
   const peaks = [];
   const n = values.length;
-  for (let i = 2; i < n - 2; i++) {
+  for (let i = 3; i < n - 3; i++) {
     const v = values[i];
-    // Must be local max within ±2 neighbours
+    // Must be local max within ±3 neighbours
     if (
       v >= values[i - 1] && v >= values[i + 1] &&
-      v >= values[i - 2] && v >= values[i + 2]
+      v >= values[i - 2] && v >= values[i + 2] &&
+      v >= values[i - 3] && v >= values[i + 3]
     ) {
-      // Check prominence vs surrounding valley
-      const leftMin = Math.min(values[i - 1], values[i - 2]);
-      const rightMin = Math.min(values[i + 1], values[i + 2]);
+      // Prominence = how much this peak stands above surrounding valleys
+      const leftMin = Math.min(values[i - 1], values[i - 2], values[i - 3]);
+      const rightMin = Math.min(values[i + 1], values[i + 2], values[i + 3]);
       const prominence = v - Math.max(leftMin, rightMin);
       if (prominence >= minProminence) {
         // Enforce minimum time gap from last peak
