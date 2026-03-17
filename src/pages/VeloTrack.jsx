@@ -112,11 +112,8 @@ export default function VeloTrack() {
     }
   }, [isTracking, trackingMode, addPoint]);
 
-  const seekVideoStartRef = useRef(0);
-
   const handleSeek = (t) => {
-    const videoT = (seekVideoStartRef.current ?? 0) + t;
-    canvasRef.current?.seekTo?.(videoT);
+    canvasRef.current?.seekTo?.(t);
     setSeekTime(t);
   };
 
