@@ -89,13 +89,13 @@ const VelocityCanvas = forwardRef(function VelocityCanvas(
     }
   }, [videoDims]);
 
-  // Play/pause based on tracking state
+  // Play/pause based on tracking state (only when not in seek mode)
   useEffect(() => {
     const video = videoRef.current;
     if (!video || !videoSource || videoSource.type !== 'upload') return;
     if (trackingMode === 'track' && isTracking) {
-      video.play();
-    } else {
+      video.play().catch(() => {});
+    } else if (!isTracking) {
       video.pause();
     }
   }, [trackingMode, isTracking, videoSource]);
