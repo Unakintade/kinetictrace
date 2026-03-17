@@ -22,9 +22,10 @@ const VelocityCanvas = forwardRef(function VelocityCanvas(
 
     if (videoSource.type === 'upload') {
       video.src = videoSource.url;
-      video.controls = true;
+      video.loop = true;
       video.onloadedmetadata = () => {
         setVideoDims({ w: video.videoWidth, h: video.videoHeight });
+        video.play();
       };
       video.load();
     } else if (videoSource.type === 'webcam') {
@@ -157,15 +158,6 @@ const VelocityCanvas = forwardRef(function VelocityCanvas(
         }`}
         style={{ background: 'hsl(220 18% 9%)' }}
       />
-      {videoSource?.type === 'upload' && videoRef.current && (
-        <div className="absolute bottom-3 left-1/2 -translate-x-1/2">
-          <video
-            ref={videoRef}
-            controls
-            className="hidden"
-          />
-        </div>
-      )}
     </div>
   );
 });
