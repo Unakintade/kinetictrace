@@ -235,36 +235,57 @@ export default function VeloTrack() {
             )}
           </div>
 
-          {/* Bottom: velocity graph + stride graph */}
-          <div className="flex border-t border-border/50 bg-card/30" style={{ height: '17rem' }}>
-            {/* Velocity graph */}
-            <div className="flex-1 flex flex-col border-r border-border/50">
-              <div className="flex items-center justify-between px-4 pt-3 pb-1">
-                <p className="text-xs text-muted-foreground uppercase tracking-widest font-medium">Velocity</p>
-                {velocityData.length > 0 && (
-                  <span className="text-xs text-muted-foreground font-mono">{velocityData.length} pts</span>
-                )}
+          {/* Bottom: velocity graph + stride graph + gait timeline */}
+          <div className="flex flex-col border-t border-border/50 bg-card/30" style={{ height: '22rem' }}>
+            {/* Top row: velocity + stride graphs */}
+            <div className="flex flex-1 min-h-0 border-b border-border/50">
+              {/* Velocity graph */}
+              <div className="flex-1 flex flex-col border-r border-border/50">
+                <div className="flex items-center justify-between px-4 pt-3 pb-1">
+                  <p className="text-xs text-muted-foreground uppercase tracking-widest font-medium">Velocity</p>
+                  {velocityData.length > 0 && (
+                    <span className="text-xs text-muted-foreground font-mono">{velocityData.length} pts</span>
+                  )}
+                </div>
+                <div className="flex-1 min-h-0 px-2 pb-2">
+                  <VelocityGraph velocityData={velocityData} onSeek={handleSeek} seekTime={seekTime} />
+                </div>
               </div>
-              <div className="flex-1 min-h-0 px-2 pb-2">
-                <VelocityGraph velocityData={velocityData} onSeek={handleSeek} seekTime={seekTime} />
+              {/* Stride graph */}
+              <div className="flex-1 flex flex-col">
+                <div className="flex items-center justify-between px-4 pt-3 pb-1">
+                  <p className="text-xs text-muted-foreground uppercase tracking-widest font-medium">Stride Analysis</p>
+                  {strideAnalysis.strideMetrics.length > 0 && (
+                    <span className="text-xs text-muted-foreground font-mono">
+                      {strideAnalysis.stanceEvents.length} contacts
+                    </span>
+                  )}
+                </div>
+                <div className="flex-1 min-h-0 px-2 pb-2">
+                  <StrideGraph
+                    windowedMetrics={strideAnalysis.windowedMetrics}
+                    strideMetrics={strideAnalysis.strideMetrics}
+                    onSeek={handleSeek}
+                    seekTime={seekTime}
+                  />
+                </div>
               </div>
             </div>
-            {/* Stride graph */}
-            <div className="flex-1 flex flex-col">
-              <div className="flex items-center justify-between px-4 pt-3 pb-1">
-                <p className="text-xs text-muted-foreground uppercase tracking-widest font-medium">Stride Analysis</p>
-                {strideAnalysis.strideMetrics.length > 0 && (
+            {/* Gait timeline row */}
+            <div className="flex flex-col" style={{ height: '7rem' }}>
+              <div className="flex items-center justify-between px-4 pt-2 pb-1">
+                <p className="text-xs text-muted-foreground uppercase tracking-widest font-medium">Gait Cycle</p>
+                {strideAnalysis.stanceEvents.length > 0 && (
                   <span className="text-xs text-muted-foreground font-mono">
-                    {strideAnalysis.stanceEvents.length} contacts
+                    stance / swing phases
                   </span>
                 )}
               </div>
-              <div className="flex-1 min-h-0 px-2 pb-2">
-                <StrideGraph
-                  windowedMetrics={strideAnalysis.windowedMetrics}
-                  strideMetrics={strideAnalysis.strideMetrics}
-                  onSeek={handleSeek}
+              <div className="flex-1 min-h-0">
+                <GaitTimeline
+                  stanceEvents={strideAnalysis.stanceEvents}
                   seekTime={seekTime}
+                  onSeek={handleSeek}
                 />
               </div>
             </div>
