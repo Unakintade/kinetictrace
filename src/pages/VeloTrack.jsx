@@ -97,19 +97,13 @@ export default function VeloTrack() {
     }
   }, [isTracking, trackingMode, addPoint]);
 
+  const seekVideoStartRef = useRef(0);
+
   const handleSeek = (t) => {
-    // t is relative to tracking start; map to actual video time
-    // trackedPoints[0].t ≈ 0, but video currentTime may differ - 
-    // we stored t as elapsed seconds since startTimeRef, so video seek = video.currentTime at start + t
-    const video = canvasRef.current?.getVideo?.();
-    if (!video || video.srcObject) return;
-    // seekVideoStart holds the video.currentTime when tracking began
     const videoT = (seekVideoStartRef.current ?? 0) + t;
     canvasRef.current?.seekTo?.(videoT);
     setSeekTime(t);
   };
-
-  const seekVideoStartRef = useRef(0);
 
   const startTracking = () => {
     const video = canvasRef.current?.getVideo?.();

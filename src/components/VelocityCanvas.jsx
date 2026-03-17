@@ -18,10 +18,11 @@ const VelocityCanvas = forwardRef(function VelocityCanvas(
     getCanvas: () => canvasRef.current,
     getVideo: () => videoRef.current,
     getCameraGeo: () => cameraGeo,
-    seekTo: (t) => {
+    seekTo: (videoTime) => {
       const video = videoRef.current;
-      if (!video || videoRef.current.srcObject) return; // no seeking for webcam
-      video.currentTime = t;
+      if (!video || video.srcObject) return; // no seeking for webcam
+      video.pause();
+      video.currentTime = videoTime;
     },
   }));
 
