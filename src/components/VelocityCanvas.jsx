@@ -132,23 +132,10 @@ const VelocityCanvas = forwardRef(function VelocityCanvas(
         const now = Date.now();
         if (now - lastAutoRef.current > 100) {
           lastAutoRef.current = now;
-          detectPerson(video).then(pose => {
+          detectPerson(video, w, h).then(pose => {
             if (!pose) return;
-            // MoveNet returns coords in video's natural resolution — scale to canvas dims
-            const scaleX = w / (video.videoWidth || w);
-            const scaleY = h / (video.videoHeight || h);
-            const scalePt = (pt) => pt ? { ...pt, x: pt.x * scaleX, y: pt.y * scaleY } : null;
-            const scaledPose = {
-              hipCenter: scalePt(pose.hipCenter),
-              leftAnkle: scalePt(pose.leftAnkle),
-              rightAnkle: scalePt(pose.rightAnkle),
-              leftKnee: scalePt(pose.leftKnee),
-              rightKnee: scalePt(pose.rightKnee),
-              leftHip: scalePt(pose.leftHip),
-              rightHip: scalePt(pose.rightHip),
-            };
-            onAutoTrackPoint(scaledPose.hipCenter);
-            if (onPoseDetected) onPoseDetected(scaledPose);
+            onAutoTrackPoint(pose.hipCenter);
+            if (onPoseDetected) onPoseDetected(pose);
           });
         }
       }
