@@ -51,22 +51,32 @@ export default function VeloTrack() {
     return data;
   }, [pixelsPerMeter]);
 
+  const addPoint = useCallback(({ x, y }) => {
+    const now = (Date.now() - startTimeRef.current) / 1000;
+    setTrackedPoints(prev => {
+      const next = [...prev, { x, y, t: now }];
+      setVelocityData(computeVelocity(next));
+      return next;
+    });
+  }, [computeVelocity]);
+
   const handleCanvasClick = useCallback(({ x, y }) => {
     if (trackingMode === 'marker') {
-      // Place calibration markers (max 2)
       setMarkers(prev => {
         if (prev.length >= 2) return [{ x, y }];
         return [...prev, { x, y }];
       });
     } else if (trackingMode === 'track' && isTracking) {
-      const now = (Date.now() - startTimeRef.current) / 1000;
-      setTrackedPoints(prev => {
-        const next = [...prev, { x, y, t: now }];
-        setVelocityData(computeVelocity(next));
-        return next;
-      });
+      // Manual fallback click
+      addPoint({ x, y });
     }
-  }, [trackingMode, isTracking, computeVelocity]);
+  }, [trackingMode, isTracking, addPoint]);
+
+  const handleAutoTrackPoint = useCallback(({ x, y }) => {
+    if (isTracking && trackingMode === 'track') {
+      addPoint({ x, y });
+    }
+  }, [isTracking, trackingMode, addPoint]);
 
   const startTracking = () => {
     startTimeRef.current = Date.now();
