@@ -209,7 +209,7 @@ const VelocityCanvas = forwardRef(function VelocityCanvas(
 
       // Draw ankle markers from latest pose
       if (isTracking && trackingMode === 'track') {
-        const latestPose = canvasRef._latestPose;
+        const latestPose = latestPoseRef.current;
         if (latestPose) {
           const ankles = [
             { kp: latestPose.leftAnkle,  color: '#22c55e', label: 'LA' },
