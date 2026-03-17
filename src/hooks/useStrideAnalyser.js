@@ -7,6 +7,23 @@
 const MIN_STRIDE_DT = 0.2;   // minimum seconds between same-leg footstrikes
 const MIN_FRAMES = 5;         // minimum confident ankle frames per leg
 
+// --- helpers ---
+function computeAngle(ax, ay, bx, by, cx, cy) {
+  const abx = ax - bx, aby = ay - by;
+  const cbx = cx - bx, cby = cy - by;
+  const dot = abx * cbx + aby * cby;
+  const mag = Math.sqrt((abx*abx+aby*aby)*(cbx*cbx+cby*cby));
+  if (mag === 0) return 0;
+  return (Math.acos(Math.max(-1, Math.min(1, dot / mag))) * 180) / Math.PI;
+}
+
+function smoothArr(arr, w = 5) {
+  return arr.map((_, i) => {
+    const sl = arr.slice(Math.max(0, i - Math.floor(w/2)), Math.min(arr.length, i + Math.ceil(w/2)));
+    return sl.reduce((a, b) => a + b, 0) / sl.length;
+  });
+}
+
 /**
  * Find local maxima in a smoothed Y array with prominence filtering.
  * Window ±2 keeps sensitivity while avoiding noise.
