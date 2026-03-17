@@ -18,6 +18,11 @@ const VelocityCanvas = forwardRef(function VelocityCanvas(
     getCanvas: () => canvasRef.current,
     getVideo: () => videoRef.current,
     getCameraGeo: () => cameraGeo,
+    seekTo: (t) => {
+      const video = videoRef.current;
+      if (!video || videoRef.current.srcObject) return; // no seeking for webcam
+      video.currentTime = t;
+    },
   }));
 
   // Analyse camera geometry once when video is ready (or on demand)
