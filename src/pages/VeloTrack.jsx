@@ -28,17 +28,34 @@ export default function VeloTrack() {
 
   const isCalibrated = markers.length === 2 && pixelsPerMeter > 0;
 
-  // Compute velocity from tracked points
+  // Get video dims from canvas ref for warp
+  const getVideoDims = () => {
+    const canvas = canvasRef.current?.getCanvas?.();
+    return canvas ? { w: canvas.width, h: canvas.height } : { w: 640, h: 360 };
+  };
+
+  // Compute velocity from tracked points, applying homography warp correction
   const computeVelocity = useCallback((points) => {
     if (points.length < 2 || !pixelsPerMeter) return [];
+    const geo = canvasRef.current?.getCameraGeo?.();
+    const { w, h } = getVideoDims();
     const data = [];
     for (let i = 1; i < points.length; i++) {
       const p1 = points[i - 1];
       const p2 = points[i];
       const dt = p2.t - p1.t;
       if (dt <= 0) continue;
-      const dx = (p2.x - p1.x) / pixelsPerMeter;
-      const dy = (p2.y - p1.y) / pixelsPerMeter;
+
+      // Apply warp correction if camera geometry is available
+      const w1 = geo
+        ? warpPoint(p1.x, p1.y, w, h, geo.tiltAngle, geo.pitchFactor, geo.vanishingPoint)
+        : p1;
+      const w2 = geo
+        ? warpPoint(p2.x, p2.y, w, h, geo.tiltAngle, geo.pitchFactor, geo.vanishingPoint)
+        : p2;
+
+      const dx = (w2.x - w1.x) / pixelsPerMeter;
+      const dy = (w2.y - w1.y) / pixelsPerMeter;
       const vx = dx / dt;
       const vy = dy / dt;
       const speed = Math.hypot(vx, vy);
