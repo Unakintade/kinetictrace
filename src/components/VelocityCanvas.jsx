@@ -1,13 +1,16 @@
 import { useRef, useEffect, useImperativeHandle, forwardRef, useState } from 'react';
+import usePoseDetector from '@/hooks/usePoseDetector';
 
 const VelocityCanvas = forwardRef(function VelocityCanvas(
-  { videoSource, trackingMode, markers, trackedPoints, isTracking, onCanvasClick },
+  { videoSource, trackingMode, markers, trackedPoints, isTracking, onCanvasClick, onAutoTrackPoint },
   ref
 ) {
   const canvasRef = useRef(null);
   const videoRef = useRef(null);
   const animFrameRef = useRef(null);
+  const lastAutoRef = useRef(0);
   const [videoDims, setVideoDims] = useState({ w: 640, h: 360 });
+  const { ready: poseReady, detectPerson } = usePoseDetector();
 
   useImperativeHandle(ref, () => ({
     getCanvas: () => canvasRef.current,
@@ -25,7 +28,6 @@ const VelocityCanvas = forwardRef(function VelocityCanvas(
       video.loop = true;
       video.onloadedmetadata = () => {
         setVideoDims({ w: video.videoWidth, h: video.videoHeight });
-        // Don't auto-play — user controls playback via Track Object mode
       };
       video.load();
     } else if (videoSource.type === 'webcam') {
@@ -38,9 +40,7 @@ const VelocityCanvas = forwardRef(function VelocityCanvas(
     }
 
     return () => {
-      if (video.srcObject) {
-        video.srcObject = null;
-      }
+      if (video.srcObject) video.srcObject = null;
     };
   }, [videoSource]);
 
@@ -55,19 +55,17 @@ const VelocityCanvas = forwardRef(function VelocityCanvas(
     }
   }, [trackingMode, isTracking, videoSource]);
 
-  // Draw loop
+  // Draw loop + auto pose detection
   useEffect(() => {
     const canvas = canvasRef.current;
     const video = videoRef.current;
     if (!canvas || !video) return;
-
     const ctx = canvas.getContext('2d');
 
-    const draw = () => {
+    const draw = async () => {
       canvas.width = videoDims.w;
       canvas.height = videoDims.h;
 
-      // Draw video frame
       if (video.readyState >= 2) {
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
       } else {
@@ -77,6 +75,17 @@ const VelocityCanvas = forwardRef(function VelocityCanvas(
         ctx.font = '16px Inter, sans-serif';
         ctx.textAlign = 'center';
         ctx.fillText('Waiting for video...', canvas.width / 2, canvas.height / 2);
+      }
+
+      // Auto pose detection: sample every ~100ms when tracking
+      if (isTracking && trackingMode === 'track' && poseReady && video.readyState >= 2) {
+        const now = Date.now();
+        if (now - lastAutoRef.current > 100) {
+          lastAutoRef.current = now;
+          detectPerson(video).then(pt => {
+            if (pt) onAutoTrackPoint(pt);
+          });
+        }
       }
 
       // Draw calibration markers
@@ -89,20 +98,17 @@ const VelocityCanvas = forwardRef(function VelocityCanvas(
         ctx.strokeStyle = color;
         ctx.lineWidth = 2;
         ctx.stroke();
-
-        // crosshair
         ctx.strokeStyle = color;
         ctx.lineWidth = 1.5;
         ctx.beginPath(); ctx.moveTo(m.x - 12, m.y); ctx.lineTo(m.x + 12, m.y); ctx.stroke();
         ctx.beginPath(); ctx.moveTo(m.x, m.y - 12); ctx.lineTo(m.x, m.y + 12); ctx.stroke();
-
         ctx.fillStyle = color;
         ctx.font = 'bold 11px Inter, sans-serif';
         ctx.textAlign = 'left';
         ctx.fillText(`M${i + 1}`, m.x + 10, m.y - 8);
       });
 
-      // Draw line between calibration markers
+      // Draw calibration line
       if (markers.length === 2) {
         ctx.beginPath();
         ctx.moveTo(markers[0].x, markers[0].y);
@@ -140,12 +146,20 @@ const VelocityCanvas = forwardRef(function VelocityCanvas(
         }
       });
 
+      // Pose-ready indicator
+      if (trackingMode === 'track') {
+        ctx.font = 'bold 11px Inter, sans-serif';
+        ctx.textAlign = 'right';
+        ctx.fillStyle = poseReady ? '#22c55e' : '#f97316';
+        ctx.fillText(poseReady ? '● AI Ready' : '● Loading AI...', canvas.width - 10, 20);
+      }
+
       animFrameRef.current = requestAnimationFrame(draw);
     };
 
     animFrameRef.current = requestAnimationFrame(draw);
     return () => cancelAnimationFrame(animFrameRef.current);
-  }, [markers, trackedPoints, videoDims]);
+  }, [markers, trackedPoints, videoDims, isTracking, trackingMode, poseReady]);
 
   const handleClick = (e) => {
     const canvas = canvasRef.current;
@@ -164,8 +178,7 @@ const VelocityCanvas = forwardRef(function VelocityCanvas(
         ref={canvasRef}
         onClick={handleClick}
         className={`w-full rounded-lg border border-border/50 ${
-          trackingMode === 'marker' ? 'canvas-crosshair' :
-          trackingMode === 'track' ? 'canvas-crosshair' : 'canvas-default'
+          trackingMode === 'marker' ? 'canvas-crosshair' : 'canvas-crosshair'
         }`}
         style={{ background: 'hsl(220 18% 9%)' }}
       />
