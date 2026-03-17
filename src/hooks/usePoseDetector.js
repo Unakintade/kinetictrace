@@ -43,7 +43,7 @@ export default function usePoseDetector() {
 
     const leftHip = get('left_hip');
     const rightHip = get('right_hip');
-    if (!leftHip || !rightHip || leftHip.score < 0.2 || rightHip.score < 0.2) return null;
+    if (!leftHip || !rightHip || leftHip.score < 0.1 || rightHip.score < 0.1) return null;
 
     return {
       hipCenter: {
