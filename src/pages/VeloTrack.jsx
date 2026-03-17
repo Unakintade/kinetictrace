@@ -73,13 +73,20 @@ export default function VeloTrack() {
     return analyseStrides(poseHistory, pixelsPerMeter, videoDims);
   }, [poseHistory, pixelsPerMeter, videoDims]);
 
-  const handlePoseDetected = useCallback((pose) => {
-    const now = (Date.now() - startTimeRef.current) / 1000;
-    setPoseHistory(prev => [...prev, { t: now, pose }]);
+  const getVideoTime = useCallback(() => {
+    const video = canvasRef.current?.getVideo?.();
+    if (video && !video.srcObject) return video.currentTime;
+    // webcam: fall back to wall-clock elapsed
+    return (Date.now() - startTimeRef.current) / 1000;
   }, []);
 
+  const handlePoseDetected = useCallback((pose) => {
+    const now = getVideoTime();
+    setPoseHistory(prev => [...prev, { t: now, pose }]);
+  }, [getVideoTime]);
+
   const addPoint = useCallback(({ x, y }) => {
-    const now = (Date.now() - startTimeRef.current) / 1000;
+    const now = getVideoTime();
     setTrackedPoints(prev => {
       const next = [...prev, { x, y, t: now }];
       setVelocityData(computeVelocity(next));
