@@ -159,7 +159,7 @@ export default function VeloTrack() {
   };
 
   const handleReset = () => {
-    stopTracking();
+    stopTracking(); // stopTracking already resets playbackRate to 1.0
     setTrackedPoints([]);
     setVelocityData([]);
     setMarkers([]);
