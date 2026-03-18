@@ -109,10 +109,15 @@ export default function VeloTrack() {
       const ct = video.currentTime;
       // Detect loop: currentTime jumped backwards significantly → new loop
       if (lastVideoTimeRef.current - ct > 0.5) {
-        loopTimeOffsetRef.current += lastVideoTimeRef.current;
+        loopCountRef.current += 1;
+        // Store video duration on first loop detection
+        if (videoDurationRef.current === 0) {
+          videoDurationRef.current = lastVideoTimeRef.current;
+        }
       }
       lastVideoTimeRef.current = ct;
-      return loopTimeOffsetRef.current + ct;
+      // Always return the raw video time (within [0, duration]) — normalised
+      return ct;
     }
     // webcam: wall-clock elapsed in seconds
     return (Date.now() - startTimeRef.current) / 1000;
