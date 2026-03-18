@@ -372,11 +372,11 @@ export default function VeloTrack() {
             </div>
           </div>
 
-          {/* Stats row */}
-          {(velocityData.length >= 2 || strideAnalysis.strideMetrics.length > 0) && (
+          {/* Stats row: show when we have velocity (from points or pose) or stride metrics */}
+          {((velocityData.length >= 2 || (strideAnalysis.velocityData?.length ?? 0) >= 2) || strideAnalysis.strideMetrics.length > 0) && (
             <div className="border-t border-border/50 px-4 py-3 bg-card/20">
               <StatsPanel
-                velocityData={velocityData}
+                velocityData={velocityData.length >= 2 ? velocityData : (strideAnalysis.velocityData ?? [])}
                 pixelsPerMeter={pixelsPerMeter}
                 strideMetrics={strideAnalysis.strideMetrics}
               />
