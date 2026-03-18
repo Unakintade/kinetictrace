@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
-import { useSession } from '@/lib/SessionContext';
 import { Link } from 'react-router-dom';
 import { Activity, ArrowLeft, Save, Trash2, Download, Upload, ChevronLeft, ChevronRight, SkipBack, SkipForward, Cpu, CheckCircle2 } from 'lucide-react';
 import GaitPhaseSelector from '@/components/GaitPhaseSelector';
@@ -12,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import usePoseDetector from '@/hooks/usePoseDetector';
 import ReviewVideo from '@/components/ReviewVideo';
+import { useSession } from '@/lib/SessionContext';
 
 function computeAngle(ax, ay, bx, by, cx, cy) {
   const v1x = ax - bx, v1y = ay - by;
@@ -69,9 +69,9 @@ const SCAN_PASSES = 2;
 const SCAN_INTERVAL_MS = 80; // ms between sampled frames during scan
 
 export default function GaitLabeler() {
+  const { videoFile, videoUrl, videoName: sharedVideoName, loadVideo, allGaitSessions, activeGaitSession, upsertSession, removeSession } = useSession();
+
   const videoRef = useRef(null);
-  const [videoFile, setVideoFile] = useState(null);
-  const [videoUrl, setVideoUrl] = useState(null);
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
   const [currentFrame, setCurrentFrame] = useState({ leftPhase: null, rightPhase: null });
