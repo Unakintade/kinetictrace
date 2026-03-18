@@ -40,10 +40,15 @@ export default function JointAnglesChart({ jointAngles, onSeek, seekTime }) {
         <Tooltip content={<CustomTooltip />} />
         <Legend wrapperStyle={{ fontSize: 11 }} formatter={v => <span style={{ color: 'hsl(var(--muted-foreground))' }}>{v}</span>} />
         {seekTime != null && <ReferenceLine x={seekTime} stroke="hsl(var(--primary))" strokeWidth={2} strokeDasharray="4 2" />}
-        <Line type="monotone" dataKey="leftKnee"  name="L Knee"  stroke="hsl(var(--chart-1))" strokeWidth={1.5} dot={false} />
-        <Line type="monotone" dataKey="rightKnee" name="R Knee"  stroke="hsl(var(--chart-2))" strokeWidth={1.5} dot={false} strokeDasharray="4 2" />
-        <Line type="monotone" dataKey="leftHip"   name="L Hip"   stroke="hsl(var(--chart-3))" strokeWidth={1.5} dot={false} />
-        <Line type="monotone" dataKey="rightHip"  name="R Hip"   stroke="hsl(var(--chart-4))" strokeWidth={1.5} dot={false} strokeDasharray="4 2" />
+        <Line type="monotone" dataKey="leftKnee"    name="L Knee"      stroke="hsl(var(--chart-1))" strokeWidth={1.5} dot={false} />
+        <Line type="monotone" dataKey="rightKnee"   name="R Knee"      stroke="hsl(var(--chart-2))" strokeWidth={1.5} dot={false} strokeDasharray="4 2" />
+        <Line type="monotone" dataKey="leftHip"     name="L Hip"       stroke="hsl(var(--chart-3))" strokeWidth={1.5} dot={false} />
+        <Line type="monotone" dataKey="rightHip"    name="R Hip"       stroke="hsl(var(--chart-4))" strokeWidth={1.5} dot={false} strokeDasharray="4 2" />
+        {/* Reference angles from labeled session */}
+        <Line type="monotone" dataKey="refLeftKnee"  name="Ref L Knee"  stroke="hsl(var(--chart-1))" strokeWidth={1} dot={false} strokeDasharray="2 4" opacity={0.45} />
+        <Line type="monotone" dataKey="refRightKnee" name="Ref R Knee"  stroke="hsl(var(--chart-2))" strokeWidth={1} dot={false} strokeDasharray="2 4" opacity={0.45} />
+        <Line type="monotone" dataKey="refLeftHip"   name="Ref L Hip"   stroke="hsl(var(--chart-3))" strokeWidth={1} dot={false} strokeDasharray="2 4" opacity={0.45} />
+        <Line type="monotone" dataKey="refRightHip"  name="Ref R Hip"   stroke="hsl(var(--chart-4))" strokeWidth={1} dot={false} strokeDasharray="2 4" opacity={0.45} />
       </LineChart>
     </ResponsiveContainer>
   );
