@@ -237,8 +237,10 @@ export default function GaitLabeler() {
 
   const exportCSV = () => {
     if (!labeledFrames.length) return;
-    const header = 'time_s,left_phase,right_phase';
-    const rows = labeledFrames.map(f => `${f.t},${f.leftPhase ?? ''},${f.rightPhase ?? ''}`);
+    const header = 'time_s,left_phase,right_phase,left_knee_deg,right_knee_deg,left_hip_deg,right_hip_deg';
+    const rows = labeledFrames.map(f =>
+      `${f.t},${f.leftPhase ?? ''},${f.rightPhase ?? ''},${f.leftKneeAngle ?? ''},${f.rightKneeAngle ?? ''},${f.leftHipAngle ?? ''},${f.rightHipAngle ?? ''}`
+    );
     const blob = new Blob([[header, ...rows].join('\n')], { type: 'text/csv' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
