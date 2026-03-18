@@ -103,12 +103,13 @@ export default function VeloTrack() {
     }).catch(() => {});
   }, [videoSource]);
 
-  // Compute stride analysis from pose history (+ optional label calibration)
+  // Compute stride analysis from pose history (+ optional label calibration + reference frames)
   const strideAnalysis = useMemo(() => {
-    const labelThresholds = gaitLabels?.frames?.length
-      ? deriveThresholdsFromLabels(gaitLabels.frames, poseHistory)
+    const refFrames = gaitLabels?.frames?.length ? gaitLabels.frames : null;
+    const labelThresholds = refFrames
+      ? deriveThresholdsFromLabels(refFrames, poseHistory)
       : null;
-    return analyseStrides(poseHistory, pixelsPerMeter, videoDims, labelThresholds);
+    return analyseStrides(poseHistory, pixelsPerMeter, videoDims, labelThresholds, refFrames);
   }, [poseHistory, pixelsPerMeter, videoDims, gaitLabels]);
 
   // Auto-stop once we have ≥4 strides per leg detected
