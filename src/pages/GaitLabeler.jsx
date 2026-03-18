@@ -626,7 +626,6 @@ export default function GaitLabeler() {
                   {/* Video + controls */}
                   <div className="flex gap-4 p-4 border-b border-border/50">
                     <div className="flex-1 relative">
-                      {/* Visible display video — mirrors videoRef via currentTime */}
                       <ReviewVideo videoUrl={videoUrl} videoRef={videoRef} currentTime={currentTime} />
                       <div className="absolute top-2 left-2 flex gap-2">
                         <span className="bg-black/70 text-white text-xs font-mono px-2 py-0.5 rounded">
