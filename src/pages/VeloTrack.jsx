@@ -261,10 +261,32 @@ export default function VeloTrack() {
             <FlaskConical className="w-3.5 h-3.5" />
             Gait Labeler
           </Link>
-          {gaitLabels && (
-            <span className="text-xs text-accent border border-accent/30 rounded px-2 py-0.5">
-              ✦ {gaitLabels.frames?.length} reference frames
-            </span>
+          {allGaitSessions.length > 0 && (
+            <div className="flex items-center gap-2">
+              <Select
+                value={gaitLabels?.id ?? '__none__'}
+                onValueChange={id => {
+                  if (id === '__none__') { setGaitLabels(null); return; }
+                  const s = allGaitSessions.find(s => s.id === id);
+                  if (s) setGaitLabels(s);
+                }}
+              >
+                <SelectTrigger className="h-7 text-xs w-44 border-accent/30 text-accent">
+                  <SelectValue placeholder="No reference session" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">No reference session</SelectItem>
+                  {allGaitSessions.map(s => (
+                    <SelectItem key={s.id} value={s.id}>
+                      {s.video_name} ({s.frames?.length ?? 0} frames)
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {gaitLabels && (
+                <span className="text-xs text-accent/70">✦ {gaitLabels.frames?.length} ref frames</span>
+              )}
+            </div>
           )}
         </div>
         {isTracking && (
