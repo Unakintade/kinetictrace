@@ -28,6 +28,8 @@ export default function VeloTrack() {
   const [poseHistory, setPoseHistory] = useState([]); // [{t, pose}]
   const [videoDims, setVideoDims] = useState({ w: 640, h: 360 });
 
+  const PLAYBACK_RATE = 0.5; // half speed for detailed analysis
+
   const canvasRef = useRef(null);
   const trackingIntervalRef = useRef(null);
   const startTimeRef = useRef(null);
