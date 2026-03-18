@@ -96,6 +96,14 @@ export default function GaitLabeler() {
     v.currentTime = 0;
   };
 
+  const runPoseDetection = useCallback(async () => {
+    const v = videoRef.current;
+    if (!v || !poseReady || v.readyState < 2) return;
+    const pose = await detectPerson(v);
+    if (!pose) return;
+    setCurrentAngles(anglesFromPose(pose));
+  }, [poseReady, detectPerson]);
+
   const handleTimeUpdate = () => {
     const v = videoRef.current;
     if (!v) return;
@@ -106,6 +114,9 @@ export default function GaitLabeler() {
     if (existing) {
       setCurrentFrame({ leftPhase: existing.leftPhase, rightPhase: existing.rightPhase });
     }
+    // Debounce pose detection (don't run on every tiny scrub event)
+    clearTimeout(poseDetectRef.current);
+    poseDetectRef.current = setTimeout(runPoseDetection, 80);
   };
 
   const stepFrame = useCallback((direction) => {
