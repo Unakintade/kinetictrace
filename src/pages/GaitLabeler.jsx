@@ -526,8 +526,8 @@ export default function GaitLabeler() {
                           }`}
                           onClick={() => seekTo(f.t)}
                         >
-                          <td className="py-1 pr-4 font-mono">{f.t.toFixed(3)}</td>
-                          <td className="py-1 pr-4">
+                          <td className="py-1 pr-3 font-mono">{f.t.toFixed(3)}</td>
+                          <td className="py-1 pr-3">
                             {f.leftPhase && (
                               <span className="px-1.5 py-0.5 rounded text-[10px] font-medium text-black"
                                 style={{ background: getPhaseColor(f.leftPhase) }}>
@@ -535,7 +535,7 @@ export default function GaitLabeler() {
                               </span>
                             )}
                           </td>
-                          <td className="py-1 pr-4">
+                          <td className="py-1 pr-3">
                             {f.rightPhase && (
                               <span className="px-1.5 py-0.5 rounded text-[10px] font-medium text-black"
                                 style={{ background: getPhaseColor(f.rightPhase) }}>
@@ -543,6 +543,10 @@ export default function GaitLabeler() {
                               </span>
                             )}
                           </td>
+                          <td className="py-1 pr-3 text-right font-mono text-green-400/80">{f.leftKneeAngle != null ? `${f.leftKneeAngle}°` : '—'}</td>
+                          <td className="py-1 pr-3 text-right font-mono text-green-400/60">{f.leftHipAngle  != null ? `${f.leftHipAngle}°`  : '—'}</td>
+                          <td className="py-1 pr-3 text-right font-mono text-orange-400/80">{f.rightKneeAngle != null ? `${f.rightKneeAngle}°` : '—'}</td>
+                          <td className="py-1 pr-3 text-right font-mono text-orange-400/60">{f.rightHipAngle  != null ? `${f.rightHipAngle}°`  : '—'}</td>
                           <td className="py-1">
                             <button
                               onClick={ev => {
