@@ -1,7 +1,7 @@
 export default function StatsPanel({ velocityData, pixelsPerMeter, strideMetrics }) {
   const hasVelocity = velocityData && velocityData.length >= 2;
   const hasStride = strideMetrics && strideMetrics.length > 0;
-  if (!hasVelocity && !hasStride) return null;
+  
 
   const speeds = hasVelocity ? velocityData.map(d => d.speed).filter(Boolean) : [];
   const maxSpeed = speeds.length ? Math.max(...speeds).toFixed(3) : '—';
