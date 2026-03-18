@@ -1,28 +1,25 @@
-import { useRef, useState } from 'react';
+import { useRef } from 'react';
 import { Upload, Camera, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useSession } from '@/lib/SessionContext';
 
-export default function VideoSource({ onVideoReady, onFileSelected }) {
-  const [mode, setMode] = useState(null); // 'upload' | 'webcam'
-  const [fileName, setFileName] = useState('');
+export default function VideoSource() {
+  const { videoSource, videoName, loadVideo, clearVideo, loadWebcam } = useSession();
   const fileInputRef = useRef(null);
-  const videoRef = useRef(null);
   const streamRef = useRef(null);
+
+  const mode = videoSource?.type ?? null;
 
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    setFileName(file.name);
-    const url = URL.createObjectURL(file);
-    onVideoReady({ type: 'upload', url });
-    setMode('upload');
+    loadVideo(file);
   };
 
   const startWebcam = async () => {
     const stream = await navigator.mediaDevices.getUserMedia({ video: true });
     streamRef.current = stream;
-    setMode('webcam');
-    onVideoReady({ type: 'webcam', stream });
+    loadWebcam(stream);
   };
 
   const stopWebcam = () => {
@@ -30,15 +27,12 @@ export default function VideoSource({ onVideoReady, onFileSelected }) {
       streamRef.current.getTracks().forEach(t => t.stop());
       streamRef.current = null;
     }
-    setMode(null);
-    onVideoReady(null);
+    clearVideo();
   };
 
   const clearUpload = () => {
-    setMode(null);
-    setFileName('');
     if (fileInputRef.current) fileInputRef.current.value = '';
-    onVideoReady(null);
+    clearVideo();
   };
 
   return (
@@ -65,9 +59,9 @@ export default function VideoSource({ onVideoReady, onFileSelected }) {
         </Button>
       </div>
 
-      {mode === 'upload' && fileName && (
+      {mode === 'upload' && videoName && (
         <div className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 border border-primary/20 rounded-md">
-          <span className="text-xs text-primary truncate flex-1">{fileName}</span>
+          <span className="text-xs text-primary truncate flex-1">{videoName}</span>
           <button onClick={clearUpload} className="text-muted-foreground hover:text-foreground">
             <X className="w-3 h-3" />
           </button>
