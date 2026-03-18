@@ -209,12 +209,28 @@ export function analyseStrides(poseHistory, pixelsPerMeter, videoDims, labelThre
     })
     .map(f => {
       const p = f.pose;
+      const t = parseFloat(f.t.toFixed(2));
+      const ref = nearestRefFrame(referenceFrames, t);
+      const live = {
+        leftKnee:  computeAngle(p.leftHip.x,  p.leftHip.y,       p.leftKnee.x,  p.leftKnee.y,  p.leftAnkle.x,  p.leftAnkle.y),
+        rightKnee: computeAngle(p.rightHip.x, p.rightHip.y,      p.rightKnee.x, p.rightKnee.y, p.rightAnkle.x, p.rightAnkle.y),
+        leftHip:   computeAngle(p.leftHip.x,  p.leftHip.y - 100, p.leftHip.x,   p.leftHip.y,   p.leftKnee.x,   p.leftKnee.y),
+        rightHip:  computeAngle(p.rightHip.x, p.rightHip.y - 100, p.rightHip.x,  p.rightHip.y,  p.rightKnee.x,  p.rightKnee.y),
+      };
       return {
-        t:          parseFloat(f.t.toFixed(2)),
-        leftKnee:   computeAngle(p.leftHip.x,  p.leftHip.y,      p.leftKnee.x,  p.leftKnee.y,  p.leftAnkle.x,  p.leftAnkle.y),
-        rightKnee:  computeAngle(p.rightHip.x, p.rightHip.y,     p.rightKnee.x, p.rightKnee.y, p.rightAnkle.x, p.rightAnkle.y),
-        leftHip:    computeAngle(p.leftHip.x,  p.leftHip.y - 100, p.leftHip.x,  p.leftHip.y,  p.leftKnee.x,   p.leftKnee.y),
-        rightHip:   computeAngle(p.rightHip.x, p.rightHip.y - 100, p.rightHip.x, p.rightHip.y, p.rightKnee.x,  p.rightKnee.y),
+        t,
+        leftKnee:      live.leftKnee,
+        rightKnee:     live.rightKnee,
+        leftHip:       live.leftHip,
+        rightHip:      live.rightHip,
+        // Reference angles from labeled session (for overlay comparison)
+        refLeftKnee:   ref?.leftKneeAngle  ?? null,
+        refRightKnee:  ref?.rightKneeAngle ?? null,
+        refLeftHip:    ref?.leftHipAngle   ?? null,
+        refRightHip:   ref?.rightHipAngle  ?? null,
+        // Reference phase labels at this time
+        refLeftPhase:  ref?.leftPhase  ?? null,
+        refRightPhase: ref?.rightPhase ?? null,
       };
     });
 
