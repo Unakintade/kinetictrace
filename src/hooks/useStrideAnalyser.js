@@ -1,7 +1,7 @@
 /**
- * Stride analyser — uses PoseAnalysis (ground detection, contact events, stride events)
- * from pose history. Converts poseHistory to flat frames and maps results to the
- * format expected by StrideGraph, GaitTimeline, StatsPanel, etc.
+ * Stride analyser — detects footstrike events per leg using ankle vertical position MINIMA
+ * (minimum Y in oscillation period = ankle at lowest point of arc = ground contact / stance phase).
+ * Between consecutive same-leg troughs = one full stride.
  */
 
 import { analyzeStrides as analyzeStridesPose } from '@/lib/PoseAnalysis';
@@ -33,10 +33,57 @@ function emptyWithReason(reason) {
 }
 
 /**
- * Convert poseHistory [{ t, pose: { leftAnkle, rightAnkle, leftKnee, rightKnee, leftHip, rightHip } }]
- * to flat StrideData frames for PoseAnalysis. Only includes frames with all 6 keypoints and ankle score > 0.2.
+ * Find local minima in a smoothed Y array with prominence filtering.
+ * Minimum Y in the oscillation period = ankle at lowest arc point = stance/ground contact.
  */
-function poseHistoryToStrideFrames(poseHistory) {
+function findTroughs(values, times, minProminence = 0.01) {
+  const troughs = [];
+  const n = values.length;
+  for (let i = 1; i < n - 1; i++) {
+    const v = values[i];
+    if (v < values[i - 1] && v < values[i + 1]) {
+      const leftMax = values[i - 1];
+      const rightMax = values[i + 1];
+      const prominence = Math.min(leftMax, rightMax) - v;
+      if (prominence >= minProminence) {
+        if (troughs.length === 0 || times[i] - troughs[troughs.length - 1].t >= MIN_STRIDE_DT) {
+          troughs.push({ t: times[i], idx: i, y: v });
+        } else if (v < troughs[troughs.length - 1].y) {
+          troughs[troughs.length - 1] = { t: times[i], idx: i, y: v };
+        }
+      }
+    }
+  }
+  return troughs;
+}
+
+/** 5-point moving average smoothing */
+function smooth(arr) {
+  return arr.map((v, i) => {
+    const slice = arr.slice(Math.max(0, i - 2), Math.min(arr.length, i + 3));
+    return slice.reduce((a, b) => a + b, 0) / slice.length;
+  });
+}
+
+const EMPTY = { stanceEvents: [], strideMetrics: [], windowedMetrics: [] };
+
+function emptyWithReason(reason) {
+  return { ...EMPTY, strideDebug: reason };
+}
+
+export function analyseStrides(poseHistory, pixelsPerMeter, videoDims) {
+  if (!poseHistory || poseHistory.length < MIN_FRAMES) {
+    return emptyWithReason(
+      !poseHistory ? 'no_pose_history' : `need_${MIN_FRAMES}_frames (have ${poseHistory.length})`
+    );
+  }
+  if (!pixelsPerMeter) {
+    return emptyWithReason('no_calibration');
+  }
+
+  const frameH = videoDims?.h || 360;
+
+  // Deduplicate frames by time (handles video looping re-adding same timestamps)
   const seen = new Set();
   const unique = poseHistory.filter((f) => {
     const key = f.t.toFixed(3);
@@ -45,35 +92,14 @@ function poseHistoryToStrideFrames(poseHistory) {
     return true;
   });
 
-  const frames = [];
-  for (const f of unique) {
-    const p = f.pose;
-    if (
-      !p?.leftAnkle || p.leftAnkle.x == null || p.leftAnkle.y == null ||
-      !p?.rightAnkle || p.rightAnkle.x == null || p.rightAnkle.y == null ||
-      !p?.leftKnee || p.leftKnee.x == null || p.leftKnee.y == null ||
-      !p?.rightKnee || p.rightKnee.x == null || p.rightKnee.y == null ||
-      !p?.leftHip || p.leftHip.x == null || p.leftHip.y == null ||
-      !p?.rightHip || p.rightHip.x == null || p.rightHip.y == null
-    )
-      continue;
-    if ((p.leftAnkle?.score ?? 0) < 0.2 && (p.rightAnkle?.score ?? 0) < 0.2)
-      continue;
-    frames.push({
-      time: f.t,
-      leftAnkleX: p.leftAnkle.x,
-      leftAnkleY: p.leftAnkle.y,
-      rightAnkleX: p.rightAnkle.x,
-      rightAnkleY: p.rightAnkle.y,
-      leftKneeX: p.leftKnee.x,
-      leftKneeY: p.leftKnee.y,
-      rightKneeX: p.rightKnee.x,
-      rightKneeY: p.rightKnee.y,
-      leftHipX: p.leftHip.x,
-      leftHipY: p.leftHip.y,
-      rightHipX: p.rightHip.x,
-      rightHipY: p.rightHip.y,
-    });
+  // Build per-leg ankle series — only frames with confident ankle detection
+  const leftFrames  = uniqueHistory.filter(f => f.pose?.leftAnkle?.score  > 0.2);
+  const rightFrames = uniqueHistory.filter(f => f.pose?.rightAnkle?.score > 0.2);
+
+  if (leftFrames.length < MIN_FRAMES && rightFrames.length < MIN_FRAMES) {
+    return emptyWithReason(
+      `need_${MIN_FRAMES}_confident_ankle_frames (L:${leftFrames.length} R:${rightFrames.length})`
+    );
   }
   return frames;
 }
@@ -135,12 +161,8 @@ export function analyseStrides(poseHistory, pixelsPerMeter, videoDims) {
     return emptyWithReason('no_calibration');
   }
 
-  const frames = poseHistoryToStrideFrames(poseHistory);
-  if (frames.length < MIN_FRAMES) {
-    return emptyWithReason(
-      `need_${MIN_FRAMES}_confident_ankle_frames (have ${frames.length})`
-    );
-  }
+  const leftPeaks  = findTroughs(smooth(leftYNorm),  leftTimes);
+  const rightPeaks = findTroughs(smooth(rightYNorm), rightTimes);
 
   const fps = estimateFps(frames);
   const result = analyzeStridesPose(frames, pixelsPerMeter, fps);
@@ -178,26 +200,84 @@ export function analyseStrides(poseHistory, pixelsPerMeter, videoDims) {
     }
   }
 
-  const jointAngles = (result.frames || []).map((f) => ({
-    t: parseFloat(Number(f.time).toFixed(2)),
-    leftKnee: f.leftKneeAngle ?? 0,
-    rightKnee: f.rightKneeAngle ?? 0,
-    leftHip: f.leftHipAngle ?? 0,
-    rightHip: f.rightHipAngle ?? 0,
-  }));
+  // ── Joint angles per frame ──────────────────────────────────────────────
+  const jointAngles = uniqueHistory
+    .filter(f => {
+      const p = f.pose;
+      return p?.leftHip && p?.rightHip && p?.leftKnee && p?.rightKnee && p?.leftAnkle && p?.rightAnkle;
+    })
+    .map(f => {
+      const p = f.pose;
+      return {
+        t: parseFloat(f.t.toFixed(2)),
+        leftKnee:  computeAngle(p.leftHip.x,  p.leftHip.y,  p.leftKnee.x,  p.leftKnee.y,  p.leftAnkle.x,  p.leftAnkle.y),
+        rightKnee: computeAngle(p.rightHip.x, p.rightHip.y, p.rightKnee.x, p.rightKnee.y, p.rightAnkle.x, p.rightAnkle.y),
+        // hip flexion: angle between vertical (above hip) → hip → knee
+        leftHip:   computeAngle(p.leftHip.x,  p.leftHip.y  - 100, p.leftHip.x,  p.leftHip.y,  p.leftKnee.x,  p.leftKnee.y),
+        rightHip:  computeAngle(p.rightHip.x, p.rightHip.y - 100, p.rightHip.x, p.rightHip.y, p.rightKnee.x, p.rightKnee.y),
+      };
+    });
 
-  const contactEvents = result.contactEvents || [];
-  const leftContactDurations = contactEvents
-    .filter((c) => c.foot === 'left')
-    .map((c) => ({
-      t: parseFloat(Number(c.startTime).toFixed(2)),
-      duration: parseFloat((c.duration * 1000).toFixed(0)),
-    }));
-  const rightContactDurations = contactEvents
-    .filter((c) => c.foot === 'right')
-    .map((c) => ({
-      t: parseFloat(Number(c.startTime).toFixed(2)),
-      duration: parseFloat((c.duration * 1000).toFixed(0)),
+  // ── Ground contact time (from ankle Y peaks) ────────────────────────────
+  // A contact event spans from the frame where the ankle is first "down" to when it lifts.
+  // We use the same peak logic: near-peak frames within ±MIN_STRIDE_DT/2 window.
+  const buildContactDurations = (frames, yNorm, times) => {
+    const threshold = 0.25; // bottom 25% Y values = minimum ankle Y = stance/ground contact
+    const maxY = Math.max(...yNorm);
+    const minY = Math.min(...yNorm);
+    const range = Math.max(maxY - minY, 0.01);
+    const norm = yNorm.map(v => (v - minY) / range); // re-normalise within leg
+
+    const contactDurations = [];
+    let inContact = false;
+    let contactStart = null;
+
+    for (let i = 0; i < norm.length; i++) {
+      if (!inContact && norm[i] <= threshold) {
+        inContact = true;
+        contactStart = times[i];
+      } else if (inContact && norm[i] > threshold) {
+        inContact = false;
+        const dur = times[i] - contactStart;
+        if (dur > 0.05 && dur < 2) {
+          contactDurations.push({ t: parseFloat(contactStart.toFixed(2)), duration: parseFloat((dur * 1000).toFixed(0)) }); // ms
+        }
+      }
+    }
+    return contactDurations;
+  };
+
+  const leftContactDurations  = leftFrames.length >= MIN_FRAMES
+    ? buildContactDurations(leftFrames,  smooth(leftYNorm),  leftTimes)
+    : [];
+  const rightContactDurations = rightFrames.length >= MIN_FRAMES
+    ? buildContactDurations(rightFrames, smooth(rightYNorm), rightTimes)
+    : [];
+
+  // ── Velocity & Acceleration ─────────────────────────────────────────────
+  const hipFrames = uniqueHistory.filter(f => f.pose?.leftHip && f.pose?.rightHip);
+  let velocityData = [];
+  if (hipFrames.length >= 2 && pixelsPerMeter) {
+    const rawVel = hipFrames.map((f, i) => {
+      if (i === 0) return 0;
+      const dt = f.t - hipFrames[i-1].t;
+      if (dt <= 0) return 0;
+      const hipX1 = (hipFrames[i-1].pose.leftHip.x + hipFrames[i-1].pose.rightHip.x) / 2;
+      const hipX2 = (f.pose.leftHip.x + f.pose.rightHip.x) / 2;
+      const hipY1 = (hipFrames[i-1].pose.leftHip.y + hipFrames[i-1].pose.rightHip.y) / 2;
+      const hipY2 = (f.pose.leftHip.y + f.pose.rightHip.y) / 2;
+      return Math.hypot(hipX2 - hipX1, hipY2 - hipY1) / pixelsPerMeter / dt;
+    });
+    const smoothVel = smoothArr(rawVel, 7);
+    const accArr = smoothVel.map((v, i) => {
+      if (i === 0) return 0;
+      const dt = hipFrames[i].t - hipFrames[i-1].t;
+      return dt > 0 ? (v - smoothVel[i-1]) / dt : 0;
+    });
+    velocityData = hipFrames.map((f, i) => ({
+      t:    parseFloat(f.t.toFixed(2)),
+      speed: parseFloat(smoothVel[i].toFixed(3)),
+      accel: parseFloat(accArr[i].toFixed(3)),
     }));
 
   const velocityData = (result.frames || []).map((f) => ({
@@ -236,6 +316,11 @@ export function analyseStrides(poseHistory, pixelsPerMeter, videoDims) {
       ? `need_2_footstrikes_per_leg (L:${leftStrideCount} R:${rightStrideCount})`
       : null;
 
+  const strideDebug =
+    strideMetrics.length === 0
+      ? `need_2_stance_troughs_per_leg (L:${leftPeaks.length} R:${rightPeaks.length})`
+      : null;
+
   return {
     stanceEvents,
     strideMetrics,
@@ -245,8 +330,8 @@ export function analyseStrides(poseHistory, pixelsPerMeter, videoDims) {
     rightContactDurations,
     velocityData,
     asymmetry,
-    peakSpeed: parseFloat(Number(result.maxVelocity ?? 0).toFixed(3)),
-    avgSpeed: parseFloat(Number(result.avgVelocity ?? 0).toFixed(3)),
+    peakSpeed: parseFloat(peakSpeed.toFixed(3)),
+    avgSpeed:  parseFloat(avgSpeed.toFixed(3)),
     strideDebug,
   };
 }

@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useMemo } from 'react';
+import { useState, useRef, useCallback, useMemo, useEffect } from 'react';
 import VideoSource from '../components/VideoSource';
 import VelocityCanvas from '../components/VelocityCanvas';
 import MarkerSetup from '../components/MarkerSetup';
@@ -33,6 +33,8 @@ export default function VeloTrack() {
   const canvasRef = useRef(null);
   const trackingIntervalRef = useRef(null);
   const startTimeRef = useRef(null);
+  const loopTimeOffsetRef = useRef(0); // accumulated duration across video loops
+  const lastVideoTimeRef = useRef(0);  // to detect loop resets
 
   // Compute pixels per meter from calibration markers
   const pixelsPerMeter = markers.length === 2
@@ -90,11 +92,26 @@ export default function VeloTrack() {
     return analyseStrides(poseHistory, pixelsPerMeter, videoDims);
   }, [poseHistory, pixelsPerMeter, videoDims]);
 
+  // Auto-stop once we have ≥4 strides per leg detected
+  useEffect(() => {
+    if (!isTracking) return;
+    const leftStrides  = strideAnalysis.stanceEvents?.filter(e => e.leg === 'left').length  ?? 0;
+    const rightStrides = strideAnalysis.stanceEvents?.filter(e => e.leg === 'right').length ?? 0;
+    if (leftStrides >= 2 && rightStrides >= 2) {
+      stopTracking();
+    }
+  }, [strideAnalysis.stanceEvents, isTracking]);
+
   const getVideoTime = useCallback(() => {
     const video = canvasRef.current?.getVideo?.();
     if (video && !video.srcObject) {
-      // video.currentTime always reports real video-content time regardless of playbackRate
-      return video.currentTime;
+      const ct = video.currentTime;
+      // Detect loop: currentTime jumped backwards significantly → new loop
+      if (lastVideoTimeRef.current - ct > 0.5) {
+        loopTimeOffsetRef.current += lastVideoTimeRef.current;
+      }
+      lastVideoTimeRef.current = ct;
+      return loopTimeOffsetRef.current + ct;
     }
     // webcam: wall-clock elapsed in seconds
     return (Date.now() - startTimeRef.current) / 1000;
@@ -139,16 +156,17 @@ export default function VeloTrack() {
 
   const startTracking = () => {
     startTimeRef.current = Date.now();
+    loopTimeOffsetRef.current = 0;
+    lastVideoTimeRef.current = 0;
     const video = canvasRef.current?.getVideo?.();
-    if (video) video.playbackRate = PLAYBACK_RATE;
+    if (video) {
+      video.playbackRate = PLAYBACK_RATE;
+      video.currentTime = 0;
+    }
     setIsTracking(true);
     setTrackedPoints([]);
     setVelocityData([]);
     setPoseHistory([]);
-    // Clear any stale pose history from previous loop
-    video?.addEventListener('seeked', () => {
-      setPoseHistory([]);
-    }, { once: true });
   };
 
   const stopTracking = () => {
@@ -193,9 +211,9 @@ export default function VeloTrack() {
         )}
       </header>
 
-      <div className="flex flex-col lg:flex-row gap-0 h-[calc(100vh-65px)]">
+      <div className="flex flex-col lg:flex-row gap-0 min-h-[calc(100vh-65px)]">
         {/* Left sidebar: controls */}
-        <aside className="w-full lg:w-72 shrink-0 border-b lg:border-b-0 lg:border-r border-border/50 p-5 flex flex-col gap-6 overflow-y-auto">
+        <aside className="w-full lg:w-72 shrink-0 border-b lg:border-b-0 lg:border-r border-border/50 p-5 flex flex-col gap-6 lg:sticky lg:top-0 lg:h-screen lg:overflow-y-auto">
           <VideoSource onVideoReady={setVideoSource} />
 
           <div className="border-t border-border/30" />
@@ -222,9 +240,9 @@ export default function VeloTrack() {
         </aside>
 
         {/* Main area */}
-        <main className="flex-1 flex flex-col gap-0 min-h-0 overflow-hidden">
+        <main className="flex-1 flex flex-col gap-0 overflow-y-auto">
           {/* Video canvas */}
-          <div className="flex-1 min-h-0 p-4 flex items-center justify-center bg-background/50">
+          <div className="p-4 flex items-center justify-center bg-background/50" style={{ minHeight: '400px' }}>
             {videoSource ? (
               <VelocityCanvas
                 ref={canvasRef}
@@ -252,10 +270,9 @@ export default function VeloTrack() {
             )}
           </div>
 
-          {/* Bottom: velocity graph + stride graph + gait timeline */}
-          <div className="flex flex-col border-t border-border/50 bg-card/30" style={{ height: '22rem' }}>
-            {/* Top row: velocity + stride graphs */}
-            <div className="flex flex-1 min-h-0 border-b border-border/50">
+          {/* Row 1: Velocity + Stride + Ankle */}
+          <div className="border-t border-border/50 bg-card/30">
+            <div className="flex" style={{ height: '14rem' }}>
               {/* Velocity graph */}
               <div className="flex-1 flex flex-col border-r border-border/50">
                 <div className="flex items-center justify-between px-4 pt-3 pb-1">
@@ -301,29 +318,27 @@ export default function VeloTrack() {
                 </div>
               </div>
             </div>
-            {/* Gait timeline row */}
-            <div className="flex flex-col" style={{ height: '7rem' }}>
-              <div className="flex items-center justify-between px-4 pt-2 pb-1">
-                <p className="text-xs text-muted-foreground uppercase tracking-widest font-medium">Gait Cycle</p>
-                {strideAnalysis.stanceEvents.length > 0 && (
-                  <span className="text-xs text-muted-foreground font-mono">
-                    stance / swing phases
-                  </span>
-                )}
-              </div>
-              <div className="flex-1 min-h-0">
-                <GaitTimeline
-                  stanceEvents={strideAnalysis.stanceEvents}
-                  seekTime={seekTime}
-                  onSeek={handleSeek}
-                  strideDebug={strideAnalysis.strideDebug}
-                />
-              </div>
+          </div>
+
+          {/* Row 2: Gait timeline */}
+          <div className="border-t border-border/50 bg-card/30" style={{ height: '12rem' }}>
+            <div className="flex items-center justify-between px-4 pt-2 pb-1">
+              <p className="text-xs text-muted-foreground uppercase tracking-widest font-medium">Gait Cycle</p>
+              {strideAnalysis.stanceEvents.length > 0 && (
+                <span className="text-xs text-muted-foreground font-mono">stance / swing phases</span>
+              )}
+            </div>
+            <div style={{ height: 'calc(12rem - 2rem)' }}>
+              <GaitTimeline
+                stanceEvents={strideAnalysis.stanceEvents}
+                seekTime={seekTime}
+                onSeek={handleSeek}
+              />
             </div>
           </div>
 
-          {/* Second row: Joint Angles + Contact Time + Asymmetry + Velocity/Accel */}
-          <div className="flex border-t border-border/50 bg-card/20" style={{ height: '14rem' }}>
+          {/* Row 3: Joint Angles + Contact Time + Asymmetry + Velocity/Accel */}
+          <div className="flex border-t border-border/50 bg-card/20" style={{ height: '16rem' }}>
             {/* Joint Angles */}
             <div className="flex-1 flex flex-col border-r border-border/50">
               <div className="px-4 pt-2 pb-1">
@@ -352,7 +367,7 @@ export default function VeloTrack() {
               <div className="px-4 pt-2 pb-1">
                 <p className="text-xs text-muted-foreground uppercase tracking-widest font-medium">Asymmetry</p>
               </div>
-              <div className="flex-1 min-h-0 overflow-hidden">
+              <div className="flex-1 min-h-0 overflow-auto">
                 <AsymmetryPanel asymmetry={strideAnalysis.asymmetry} />
               </div>
             </div>
