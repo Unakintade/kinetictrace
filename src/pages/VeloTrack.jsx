@@ -31,6 +31,7 @@ export default function VeloTrack() {
   const [poseHistory, setPoseHistory] = useState([]); // [{t, pose}] — always within [0, videoDuration]
   const [videoDims, setVideoDims] = useState({ w: 640, h: 360 });
   const [gaitLabels, setGaitLabels] = useState(null); // derived thresholds from labeler
+  const [allGaitSessions, setAllGaitSessions] = useState([]); // all saved sessions for picker
 
   const PLAYBACK_RATE = 0.5; // half speed for detailed analysis
 
