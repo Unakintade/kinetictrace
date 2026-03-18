@@ -85,8 +85,7 @@ function computeAngle(ax, ay, bx, by, cx, cy) {
  * Build ground-contact durations using the bottom 25% of normalised ankle Y
  * (minimum Y = lowest arc point = stance / ground contact).
  */
-function buildContactDurations(yNorm, times) {
-  const threshold = 0.25;
+function buildContactDurations(yNorm, times, threshold = 0.25) {
   const maxY = Math.max(...yNorm);
   const minY = Math.min(...yNorm);
   const range = Math.max(maxY - minY, 0.01);
@@ -114,7 +113,15 @@ function buildContactDurations(yNorm, times) {
   return contactDurations;
 }
 
-export function analyseStrides(poseHistory, pixelsPerMeter, videoDims) {
+/**
+ * @param {Array} poseHistory
+ * @param {number} pixelsPerMeter
+ * @param {object} videoDims
+ * @param {{ leftContactThreshold?: number, rightContactThreshold?: number, sampleCount?: number } | null} labelThresholds
+ *   Optional calibration derived from manually labeled frames.
+ *   Thresholds are fractions [0,1] of the normalised ankle-Y range — higher = more permissive contact detection.
+ */
+export function analyseStrides(poseHistory, pixelsPerMeter, videoDims, labelThresholds = null) {
   if (!poseHistory || poseHistory.length < MIN_FRAMES) {
     return emptyWithReason(
       !poseHistory ? 'no_pose_history' : `need_${MIN_FRAMES}_frames (have ${poseHistory.length})`
@@ -186,16 +193,22 @@ export function analyseStrides(poseHistory, pixelsPerMeter, videoDims) {
   const leftFrames  = unique.filter(f => (f.pose?.leftAnkle?.score  ?? 0) > 0.2);
   const rightFrames = unique.filter(f => (f.pose?.rightAnkle?.score ?? 0) > 0.2);
 
+  // Apply label-calibrated thresholds when available (override default 25%)
+  const leftThreshold  = labelThresholds?.leftContactThreshold  ?? 0.25;
+  const rightThreshold = labelThresholds?.rightContactThreshold ?? 0.25;
+
   const leftContactDurations = leftFrames.length >= MIN_FRAMES
     ? buildContactDurations(
         smooth(leftFrames.map(f => f.pose.leftAnkle.y)),
-        leftFrames.map(f => f.t)
+        leftFrames.map(f => f.t),
+        leftThreshold
       )
     : [];
   const rightContactDurations = rightFrames.length >= MIN_FRAMES
     ? buildContactDurations(
         smooth(rightFrames.map(f => f.pose.rightAnkle.y)),
-        rightFrames.map(f => f.t)
+        rightFrames.map(f => f.t),
+        rightThreshold
       )
     : [];
 
