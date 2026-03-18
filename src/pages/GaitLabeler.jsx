@@ -56,6 +56,9 @@ export default function GaitLabeler() {
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
   const [currentFrame, setCurrentFrame] = useState({ leftPhase: null, rightPhase: null });
+  const [currentAngles, setCurrentAngles] = useState(null);
+  const { ready: poseReady, detectPerson } = usePoseDetector();
+  const poseDetectRef = useRef(null); // debounce
   const [labeledFrames, setLabeledFrames] = useState([]); // [{t, leftPhase, rightPhase}]
   const [videoName, setVideoName] = useState('');
   const [sessionNotes, setSessionNotes] = useState('');
