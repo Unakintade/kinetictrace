@@ -25,28 +25,28 @@ function smoothArr(arr, w = 5) {
 }
 
 /**
- * Find local maxima in a smoothed Y array with prominence filtering.
- * Window ±2 keeps sensitivity while avoiding noise.
+ * Find local minima in a smoothed Y array with prominence filtering.
+ * Minimum Y in the oscillation period = ankle at lowest arc point = stance/ground contact.
  */
-function findPeaks(values, times, minProminence = 0.01) {
-  const peaks = [];
+function findTroughs(values, times, minProminence = 0.01) {
+  const troughs = [];
   const n = values.length;
   for (let i = 1; i < n - 1; i++) {
     const v = values[i];
-    if (v > values[i - 1] && v > values[i + 1]) {
-      const leftMin = values[i - 1];
-      const rightMin = values[i + 1];
-      const prominence = v - Math.max(leftMin, rightMin);
+    if (v < values[i - 1] && v < values[i + 1]) {
+      const leftMax = values[i - 1];
+      const rightMax = values[i + 1];
+      const prominence = Math.min(leftMax, rightMax) - v;
       if (prominence >= minProminence) {
-        if (peaks.length === 0 || times[i] - peaks[peaks.length - 1].t >= MIN_STRIDE_DT) {
-          peaks.push({ t: times[i], idx: i, y: v });
-        } else if (v > peaks[peaks.length - 1].y) {
-          peaks[peaks.length - 1] = { t: times[i], idx: i, y: v };
+        if (troughs.length === 0 || times[i] - troughs[troughs.length - 1].t >= MIN_STRIDE_DT) {
+          troughs.push({ t: times[i], idx: i, y: v });
+        } else if (v < troughs[troughs.length - 1].y) {
+          troughs[troughs.length - 1] = { t: times[i], idx: i, y: v };
         }
       }
     }
   }
-  return peaks;
+  return troughs;
 }
 
 /** 5-point moving average smoothing */
