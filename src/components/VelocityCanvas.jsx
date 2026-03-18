@@ -1,6 +1,7 @@
 import { useRef, useEffect, useImperativeHandle, forwardRef, useState, useCallback } from 'react';
 import usePoseDetector from '@/hooks/usePoseDetector';
 import { analyseFrame, warpPoint } from '@/hooks/useHomography';
+import { sharpenFrame } from '@/hooks/useFrameSharpener';
 
 const VelocityCanvas = forwardRef(function VelocityCanvas(
   { videoSource, trackingMode, markers, trackedPoints, isTracking, onCanvasClick, onAutoTrackPoint, onPoseDetected, onVideoDims, stanceEvents },
