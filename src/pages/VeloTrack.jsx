@@ -193,9 +193,9 @@ export default function VeloTrack() {
         )}
       </header>
 
-      <div className="flex flex-col lg:flex-row gap-0 h-[calc(100vh-65px)]">
+      <div className="flex flex-col lg:flex-row gap-0 min-h-[calc(100vh-65px)]">
         {/* Left sidebar: controls */}
-        <aside className="w-full lg:w-72 shrink-0 border-b lg:border-b-0 lg:border-r border-border/50 p-5 flex flex-col gap-6 overflow-y-auto">
+        <aside className="w-full lg:w-72 shrink-0 border-b lg:border-b-0 lg:border-r border-border/50 p-5 flex flex-col gap-6 lg:sticky lg:top-0 lg:h-screen lg:overflow-y-auto">
           <VideoSource onVideoReady={setVideoSource} />
 
           <div className="border-t border-border/30" />
