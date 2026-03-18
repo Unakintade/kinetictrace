@@ -6,6 +6,7 @@ import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import VeloTrack from './pages/VeloTrack';
+import GaitLabeler from './pages/GaitLabeler';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -31,6 +32,7 @@ const AuthenticatedApp = () => {
     <Routes>
       <Route path="/" element={<Navigate to="/VeloTrack" replace />} />
       <Route path="/VeloTrack" element={<VeloTrack />} />
+      <Route path="/GaitLabeler" element={<GaitLabeler />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );
