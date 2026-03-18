@@ -93,12 +93,12 @@ export default function VeloTrack() {
   const getVideoTime = useCallback(() => {
     const video = canvasRef.current?.getVideo?.();
     if (video && !video.srcObject) {
-      // currentTime advances at half speed, multiply by playbackRate to get real-world time
-      return video.currentTime * PLAYBACK_RATE;
+      // video.currentTime always reports real video-content time regardless of playbackRate
+      return video.currentTime;
     }
-    // webcam: wall-clock elapsed scaled by playback rate
-    return ((Date.now() - startTimeRef.current) / 1000) * PLAYBACK_RATE;
-  }, [PLAYBACK_RATE]);
+    // webcam: wall-clock elapsed in seconds
+    return (Date.now() - startTimeRef.current) / 1000;
+  }, []);
 
   const handlePoseDetected = useCallback((pose) => {
     const now = getVideoTime();
