@@ -26,6 +26,10 @@ export function isFlightPhase(phaseId) {
   return PHASE_GROUPS.flight.includes(phaseId);
 }
 
+export function isRecoveryPhase(phaseId) {
+  return PHASE_GROUPS.recovery.includes(phaseId);
+}
+
 export function getPhaseColor(phaseId) {
   return GAIT_PHASES.find(p => p.id === phaseId)?.color ?? '#6b7280';
 }
