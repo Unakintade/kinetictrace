@@ -543,6 +543,20 @@ export default function GaitLabeler() {
 
         {/* Main area */}
         <main className="flex-1 flex flex-col overflow-hidden">
+          {/* Single persistent video element — always mounted when videoUrl exists */}
+          {videoUrl && (
+            <video
+              ref={videoRef}
+              src={videoUrl}
+              onLoadedMetadata={handleVideoLoaded}
+              onTimeUpdate={handleTimeUpdate}
+              className={scanPhase === 'review' ? 'hidden' : 'hidden'}
+              style={{ position: 'absolute', pointerEvents: 'none', width: 1, height: 1, opacity: 0 }}
+              playsInline
+              muted
+            />
+          )}
+
           {!videoUrl ? (
             <div className="flex-1 flex items-center justify-center text-muted-foreground">
               <div className="text-center space-y-3">
@@ -585,16 +599,6 @@ export default function GaitLabeler() {
                       </div>
                     </div>
                   )}
-                  {/* Hidden video still needed for scanning */}
-                  <video
-                    ref={videoRef}
-                    src={videoUrl}
-                    onLoadedMetadata={handleVideoLoaded}
-                    onTimeUpdate={handleTimeUpdate}
-                    className="hidden"
-                    playsInline
-                    muted
-                  />
                 </div>
               )}
 
@@ -620,15 +624,20 @@ export default function GaitLabeler() {
                   {/* Video + controls */}
                   <div className="flex gap-4 p-4 border-b border-border/50">
                     <div className="flex-1 relative">
+                      {/* Visible video clone for review — driven by the hidden video via currentTime sync */}
                       <video
-                        ref={videoRef}
                         src={videoUrl}
-                        onLoadedMetadata={handleVideoLoaded}
-                        onTimeUpdate={handleTimeUpdate}
+                        ref={el => {
+                          // Keep this visible video in sync when scrubbing
+                          if (el) el._reviewEl = true;
+                        }}
+                        onLoadedMetadata={() => {}}
+                        onTimeUpdate={() => {}}
                         className="w-full rounded-lg border border-border/50 bg-black"
                         style={{ maxHeight: '380px', objectFit: 'contain' }}
                         playsInline
                         muted
+                        id="review-video"
                       />
                       <div className="absolute top-2 left-2 flex gap-2">
                         <span className="bg-black/70 text-white text-xs font-mono px-2 py-0.5 rounded">
