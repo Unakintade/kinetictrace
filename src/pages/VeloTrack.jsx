@@ -97,7 +97,7 @@ export default function VeloTrack() {
     if (!isTracking) return;
     const leftStrides  = strideAnalysis.stanceEvents?.filter(e => e.leg === 'left').length  ?? 0;
     const rightStrides = strideAnalysis.stanceEvents?.filter(e => e.leg === 'right').length ?? 0;
-    if (leftStrides >= 4 && rightStrides >= 4) {
+    if (leftStrides >= 2 && rightStrides >= 2) {
       stopTracking();
     }
   }, [strideAnalysis.stanceEvents, isTracking]);
