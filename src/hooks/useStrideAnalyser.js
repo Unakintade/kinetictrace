@@ -1,7 +1,7 @@
 /**
- * Stride analyser — detects footstrike events per leg using ankle vertical position maxima
- * (high Y in image coords = ankle near ground = stance phase).
- * Between consecutive same-leg peaks = one full stride.
+ * Stride analyser — detects footstrike events per leg using ankle vertical position MINIMA
+ * (minimum Y in oscillation period = ankle at lowest point of arc = ground contact / stance phase).
+ * Between consecutive same-leg troughs = one full stride.
  */
 
 const MIN_STRIDE_DT = 0.2;   // minimum seconds between same-leg footstrikes
