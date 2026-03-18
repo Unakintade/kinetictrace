@@ -555,38 +555,53 @@ export default function GaitLabeler() {
             </div>
           ) : (
             <>
-              {/* Scanning overlay */}
-              {(scanPhase === 'waiting' || scanPhase === 'scanning') && (
-                <div className="flex-1 flex flex-col items-center justify-center gap-6 p-8">
-                  <div className="w-20 h-20 rounded-2xl bg-accent/10 border border-accent/20 flex items-center justify-center">
-                    <Cpu className="w-9 h-9 text-accent animate-pulse" />
-                  </div>
-                  <div className="text-center space-y-1">
-                    <p className="text-base font-semibold">
-                      {scanPhase === 'waiting' ? 'Loading AI model…' : `Scanning video — pass ${scanPass + 1} of ${SCAN_PASSES}`}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      {scanPhase === 'waiting'
-                        ? 'AI pose model is initialising'
-                        : 'Detecting poses and estimating gait phases automatically'}
-                    </p>
-                  </div>
-                  {scanPhase === 'scanning' && (
-                    <div className="w-72 space-y-2">
-                      <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-accent transition-all duration-300 rounded-full"
-                          style={{ width: `${Math.round(scanProgress * 100)}%` }}
-                        />
-                      </div>
-                      <div className="flex justify-between text-xs text-muted-foreground">
-                        <span>{Math.round(scanProgress * 100)}%</span>
-                        <span>{scanFramesRef.current.length} frames scanned</span>
-                      </div>
+              {/* THE ONE video element — always in the DOM while videoUrl is set.
+                  During scan it's visually hidden but still functional for pose detection.
+                  During review it's shown full-size. */}
+              <div className={scanPhase === 'review' ? 'hidden' : ''}>
+                {/* Scan overlay shown above the hidden video */}
+                {(scanPhase === 'waiting' || scanPhase === 'scanning') && (
+                  <div className="flex flex-col items-center justify-center gap-6 p-8" style={{ minHeight: 'calc(100vh - 120px)' }}>
+                    <div className="w-20 h-20 rounded-2xl bg-accent/10 border border-accent/20 flex items-center justify-center">
+                      <Cpu className="w-9 h-9 text-accent animate-pulse" />
                     </div>
-                  )}
-                </div>
-              )}
+                    <div className="text-center space-y-1">
+                      <p className="text-base font-semibold">
+                        {scanPhase === 'waiting' ? 'Loading AI model…' : `Scanning video — pass ${scanPass + 1} of ${SCAN_PASSES}`}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        {scanPhase === 'waiting'
+                          ? 'AI pose model is initialising'
+                          : 'Detecting poses and estimating gait phases automatically'}
+                      </p>
+                    </div>
+                    {scanPhase === 'scanning' && (
+                      <div className="w-72 space-y-2">
+                        <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-accent transition-all duration-300 rounded-full"
+                            style={{ width: `${Math.round(scanProgress * 100)}%` }}
+                          />
+                        </div>
+                        <div className="flex justify-between text-xs text-muted-foreground">
+                          <span>{Math.round(scanProgress * 100)}%</span>
+                          <span>{scanFramesRef.current.length} frames scanned</span>
+                        </div>
+                      </div>
+                    )}
+                    {/* Video is off-screen but mounted so ref works */}
+                    <video
+                      ref={videoRef}
+                      src={videoUrl}
+                      onLoadedMetadata={handleVideoLoaded}
+                      onTimeUpdate={handleTimeUpdate}
+                      style={{ position: 'fixed', top: -9999, left: -9999, width: 1, height: 1 }}
+                      playsInline
+                      muted
+                    />
+                  </div>
+                )}
+              </div>
 
               {/* Review mode */}
               {scanPhase === 'review' && (
@@ -610,20 +625,15 @@ export default function GaitLabeler() {
                   {/* Video + controls */}
                   <div className="flex gap-4 p-4 border-b border-border/50">
                     <div className="flex-1 relative">
-                      {/* Visible video clone for review — driven by the hidden video via currentTime sync */}
                       <video
+                        ref={videoRef}
                         src={videoUrl}
-                        ref={el => {
-                          // Keep this visible video in sync when scrubbing
-                          if (el) el._reviewEl = true;
-                        }}
-                        onLoadedMetadata={() => {}}
-                        onTimeUpdate={() => {}}
+                        onLoadedMetadata={handleVideoLoaded}
+                        onTimeUpdate={handleTimeUpdate}
                         className="w-full rounded-lg border border-border/50 bg-black"
                         style={{ maxHeight: '380px', objectFit: 'contain' }}
                         playsInline
                         muted
-                        id="review-video"
                       />
                       <div className="absolute top-2 left-2 flex gap-2">
                         <span className="bg-black/70 text-white text-xs font-mono px-2 py-0.5 rounded">
