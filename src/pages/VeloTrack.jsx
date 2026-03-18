@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useMemo } from 'react';
+import { useState, useRef, useCallback, useMemo, useEffect } from 'react';
 import VideoSource from '../components/VideoSource';
 import VelocityCanvas from '../components/VelocityCanvas';
 import MarkerSetup from '../components/MarkerSetup';
