@@ -82,7 +82,7 @@ export default function GaitLabeler() {
   const { ready: poseReady, detectPerson } = usePoseDetector();
   const poseDetectRef = useRef(null);
   const [labeledFrames, setLabeledFrames] = useState([]);
-  const [videoName, setVideoName] = useState('');
+  const [videoName, setVideoName] = useState(sharedVideoFile?.name ?? '');
   const [sessionNotes, setSessionNotes] = useState('');
   // Sessions are managed by SessionContext; keep a local alias for selected session
   const [selectedSession, setSelectedSession] = useState(activeGaitSession);
