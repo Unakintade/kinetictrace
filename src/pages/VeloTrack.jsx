@@ -284,6 +284,7 @@ export default function VeloTrack() {
                     strideMetrics={strideAnalysis.strideMetrics}
                     onSeek={handleSeek}
                     seekTime={seekTime}
+                    strideDebug={strideAnalysis.strideDebug}
                   />
                 </div>
               </div>
