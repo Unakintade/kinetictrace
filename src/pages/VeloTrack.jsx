@@ -139,12 +139,14 @@ export default function VeloTrack() {
 
   const startTracking = () => {
     startTimeRef.current = Date.now();
+    const video = canvasRef.current?.getVideo?.();
+    if (video) video.playbackRate = PLAYBACK_RATE;
     setIsTracking(true);
     setTrackedPoints([]);
     setVelocityData([]);
     setPoseHistory([]);
     // Clear any stale pose history from previous loop
-    canvasRef.current?.getVideo?.()?.addEventListener('seeked', () => {
+    video?.addEventListener('seeked', () => {
       setPoseHistory([]);
     }, { once: true });
   };
@@ -152,6 +154,8 @@ export default function VeloTrack() {
   const stopTracking = () => {
     setIsTracking(false);
     clearInterval(trackingIntervalRef.current);
+    const video = canvasRef.current?.getVideo?.();
+    if (video) video.playbackRate = 1.0;
   };
 
   const handleReset = () => {
