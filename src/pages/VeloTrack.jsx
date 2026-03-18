@@ -252,10 +252,9 @@ export default function VeloTrack() {
             )}
           </div>
 
-          {/* Bottom: velocity graph + stride graph + gait timeline */}
-          <div className="flex flex-col border-t border-border/50 bg-card/30" style={{ height: '22rem' }}>
-            {/* Top row: velocity + stride graphs */}
-            <div className="flex flex-1 min-h-0 border-b border-border/50">
+          {/* Row 1: Velocity + Stride + Ankle */}
+          <div className="border-t border-border/50 bg-card/30">
+            <div className="flex" style={{ height: '14rem' }}>
               {/* Velocity graph */}
               <div className="flex-1 flex flex-col border-r border-border/50">
                 <div className="flex items-center justify-between px-4 pt-3 pb-1">
@@ -301,28 +300,27 @@ export default function VeloTrack() {
                 </div>
               </div>
             </div>
-            {/* Gait timeline row */}
-            <div className="flex flex-col" style={{ height: '7rem' }}>
-              <div className="flex items-center justify-between px-4 pt-2 pb-1">
-                <p className="text-xs text-muted-foreground uppercase tracking-widest font-medium">Gait Cycle</p>
-                {strideAnalysis.stanceEvents.length > 0 && (
-                  <span className="text-xs text-muted-foreground font-mono">
-                    stance / swing phases
-                  </span>
-                )}
-              </div>
-              <div className="flex-1 min-h-0">
-                <GaitTimeline
-                  stanceEvents={strideAnalysis.stanceEvents}
-                  seekTime={seekTime}
-                  onSeek={handleSeek}
-                />
-              </div>
+          </div>
+
+          {/* Row 2: Gait timeline */}
+          <div className="border-t border-border/50 bg-card/30" style={{ height: '7rem' }}>
+            <div className="flex items-center justify-between px-4 pt-2 pb-1">
+              <p className="text-xs text-muted-foreground uppercase tracking-widest font-medium">Gait Cycle</p>
+              {strideAnalysis.stanceEvents.length > 0 && (
+                <span className="text-xs text-muted-foreground font-mono">stance / swing phases</span>
+              )}
+            </div>
+            <div style={{ height: 'calc(7rem - 2rem)' }}>
+              <GaitTimeline
+                stanceEvents={strideAnalysis.stanceEvents}
+                seekTime={seekTime}
+                onSeek={handleSeek}
+              />
             </div>
           </div>
 
-          {/* Second row: Joint Angles + Contact Time + Asymmetry + Velocity/Accel */}
-          <div className="flex border-t border-border/50 bg-card/20" style={{ height: '14rem' }}>
+          {/* Row 3: Joint Angles + Contact Time + Asymmetry + Velocity/Accel */}
+          <div className="flex border-t border-border/50 bg-card/20" style={{ height: '16rem' }}>
             {/* Joint Angles */}
             <div className="flex-1 flex flex-col border-r border-border/50">
               <div className="px-4 pt-2 pb-1">
@@ -351,7 +349,7 @@ export default function VeloTrack() {
               <div className="px-4 pt-2 pb-1">
                 <p className="text-xs text-muted-foreground uppercase tracking-widest font-medium">Asymmetry</p>
               </div>
-              <div className="flex-1 min-h-0 overflow-hidden">
+              <div className="flex-1 min-h-0 overflow-auto">
                 <AsymmetryPanel asymmetry={strideAnalysis.asymmetry} />
               </div>
             </div>
