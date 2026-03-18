@@ -604,6 +604,7 @@ export default function GaitLabeler() {
               </div>
 
               {/* Review mode */}
+              {/* ── Review mode ───────────────────────────────────────────────── */}
               {scanPhase === 'review' && (
                 <>
                   {/* Scan complete banner */}
