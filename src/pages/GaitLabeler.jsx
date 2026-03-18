@@ -92,7 +92,7 @@ export default function GaitLabeler() {
 
   // ── Auto-scan state ─────────────────────────────────────────────────────
   // 'idle' | 'waiting' | 'scanning' | 'review'
-  const [scanPhase, setScanPhase] = useState('idle');
+  const [scanPhase, setScanPhase] = useState(sharedVideoUrl ? 'waiting' : 'idle');
   const [scanPass, setScanPass] = useState(0);       // 0-based current pass
   const [scanProgress, setScanProgress] = useState(0); // 0–1
   const scanFramesRef = useRef([]);  // accumulated raw frames [{t, pose, angles}]
