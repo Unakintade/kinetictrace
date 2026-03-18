@@ -123,9 +123,35 @@ export default function VeloTrack() {
     return (Date.now() - startTimeRef.current) / 1000;
   }, []);
 
+  // Average confidence score of all keypoints in a pose (higher = better detection)
+  const poseConfidence = (pose) => {
+    if (!pose) return 0;
+    const kps = Object.values(pose).filter(kp => typeof kp?.score === 'number');
+    return kps.length ? kps.reduce((s, kp) => s + kp.score, 0) / kps.length : 0;
+  };
+
   const handlePoseDetected = useCallback((pose) => {
     const now = getVideoTime();
-    setPoseHistory(prev => [...prev, { t: now, pose }]);
+    const isLooping = loopCountRef.current > 0;
+
+    if (!isLooping) {
+      // First pass: just accumulate frames
+      setPoseHistory(prev => [...prev, { t: now, pose }]);
+    } else {
+      // Subsequent loops: replace existing frame only if new pose is more confident
+      const SLOT_WINDOW = 0.05; // seconds — merge frames within 50ms
+      const newConf = poseConfidence(pose);
+      setPoseHistory(prev => {
+        const existing = prev.find(f => Math.abs(f.t - now) < SLOT_WINDOW);
+        if (!existing) return [...prev, { t: now, pose }];
+        if (newConf > poseConfidence(existing.pose)) {
+          return prev.map(f =>
+            Math.abs(f.t - now) < SLOT_WINDOW ? { ...f, pose } : f
+          );
+        }
+        return prev; // keep existing — it's better
+      });
+    }
   }, [getVideoTime]);
 
   const addPoint = useCallback(({ x, y }) => {
