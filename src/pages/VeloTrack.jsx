@@ -303,14 +303,14 @@ export default function VeloTrack() {
           </div>
 
           {/* Row 2: Gait timeline */}
-          <div className="border-t border-border/50 bg-card/30" style={{ height: '7rem' }}>
+          <div className="border-t border-border/50 bg-card/30" style={{ height: '12rem' }}>
             <div className="flex items-center justify-between px-4 pt-2 pb-1">
               <p className="text-xs text-muted-foreground uppercase tracking-widest font-medium">Gait Cycle</p>
               {strideAnalysis.stanceEvents.length > 0 && (
                 <span className="text-xs text-muted-foreground font-mono">stance / swing phases</span>
               )}
             </div>
-            <div style={{ height: 'calc(7rem - 2rem)' }}>
+            <div style={{ height: 'calc(12rem - 2rem)' }}>
               <GaitTimeline
                 stanceEvents={strideAnalysis.stanceEvents}
                 seekTime={seekTime}
