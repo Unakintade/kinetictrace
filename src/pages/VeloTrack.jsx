@@ -251,8 +251,22 @@ export default function VeloTrack() {
           <h1 className="text-base font-semibold tracking-tight">VeloTrack CV</h1>
           <p className="text-xs text-muted-foreground">Object velocity analysis via computer vision</p>
         </div>
+        <div className="ml-auto flex items-center gap-3">
+          <Link
+            to="/GaitLabeler"
+            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground border border-border/50 rounded px-2 py-1 transition-colors"
+          >
+            <FlaskConical className="w-3.5 h-3.5" />
+            Gait Labeler
+          </Link>
+          {gaitLabels && (
+            <span className="text-xs text-accent border border-accent/30 rounded px-2 py-0.5">
+              ✦ {gaitLabels.frames?.length} reference frames
+            </span>
+          )}
+        </div>
         {isTracking && (
-          <div className="ml-auto flex items-center gap-3">
+          <div className="flex items-center gap-3">
             <span className="text-xs text-muted-foreground font-mono border border-border/60 rounded px-2 py-0.5">
               {PLAYBACK_RATE}× speed
             </span>
