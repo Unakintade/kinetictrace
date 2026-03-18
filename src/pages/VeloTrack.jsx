@@ -94,19 +94,9 @@ export default function VeloTrack() {
     return raw;
   }, [pixelsPerMeter, videoDims]);
 
-  // Load all saved gait sessions on mount
-  useEffect(() => {
-    base44.entities.GaitLabel.list('-updated_date', 20).then(sessions => {
-      setAllGaitSessions(sessions ?? []);
-      // Auto-select most recent as default
-      const latest = sessions?.[0];
-      if (latest?.frames?.length) setGaitLabels(latest);
-    }).catch(() => {});
-  }, []);
-
   // Compute stride analysis from pose history (+ optional label calibration + reference frames)
   const strideAnalysis = useMemo(() => {
-    const refFrames = gaitLabels?.frames?.length ? gaitLabels.frames : null;
+    const refFrames = activeGaitSession?.frames?.length ? activeGaitSession.frames : null;
     const labelThresholds = refFrames
       ? deriveThresholdsFromLabels(refFrames, poseHistory)
       : null;
