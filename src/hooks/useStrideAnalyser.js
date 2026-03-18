@@ -106,8 +106,8 @@ export function analyseStrides(poseHistory, pixelsPerMeter, videoDims) {
   const leftY  = leftFrames.map(f => f.pose.leftAnkle.y);
   const rightY = rightFrames.map(f => f.pose.rightAnkle.y);
 
-  const leftPeaks  = findPeaks(smooth(leftYNorm),  leftTimes);
-  const rightPeaks = findPeaks(smooth(rightYNorm), rightTimes);
+  const leftPeaks  = findTroughs(smooth(leftYNorm),  leftTimes);
+  const rightPeaks = findTroughs(smooth(rightYNorm), rightTimes);
 
   // Build stance events
   const stanceEvents = [];
