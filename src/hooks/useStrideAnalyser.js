@@ -4,24 +4,32 @@
  * Between consecutive same-leg troughs = one full stride.
  */
 
-const MIN_STRIDE_DT = 0.2;   // minimum seconds between same-leg footstrikes
-const MIN_FRAMES = 5;         // minimum confident ankle frames per leg
+import { analyzeStrides as analyzeStridesPose } from '@/lib/PoseAnalysis';
 
-// --- helpers ---
-function computeAngle(ax, ay, bx, by, cx, cy) {
-  const abx = ax - bx, aby = ay - by;
-  const cbx = cx - bx, cby = cy - by;
-  const dot = abx * cbx + aby * cby;
-  const mag = Math.sqrt((abx*abx+aby*aby)*(cbx*cbx+cby*cby));
-  if (mag === 0) return 0;
-  return (Math.acos(Math.max(-1, Math.min(1, dot / mag))) * 180) / Math.PI;
-}
+const MIN_FRAMES = 5;
 
-function smoothArr(arr, w = 5) {
-  return arr.map((_, i) => {
-    const sl = arr.slice(Math.max(0, i - Math.floor(w/2)), Math.min(arr.length, i + Math.ceil(w/2)));
-    return sl.reduce((a, b) => a + b, 0) / sl.length;
-  });
+const EMPTY = {
+  stanceEvents: [],
+  strideMetrics: [],
+  windowedMetrics: [],
+  jointAngles: [],
+  leftContactDurations: [],
+  rightContactDurations: [],
+  velocityData: [],
+  asymmetry: {
+    strideLength: { pct: 0, left: 0, right: 0 },
+    strideFreq: { pct: 0, left: 0, right: 0 },
+    contactTime: { pct: 0, left: 0, right: 0 },
+  },
+};
+
+function emptyWithReason(reason) {
+  return {
+    ...EMPTY,
+    peakSpeed: 0,
+    avgSpeed: 0,
+    strideDebug: reason,
+  };
 }
 
 /**
@@ -77,7 +85,7 @@ export function analyseStrides(poseHistory, pixelsPerMeter, videoDims) {
 
   // Deduplicate frames by time (handles video looping re-adding same timestamps)
   const seen = new Set();
-  const uniqueHistory = poseHistory.filter(f => {
+  const unique = poseHistory.filter((f) => {
     const key = f.t.toFixed(3);
     if (seen.has(key)) return false;
     seen.add(key);
@@ -93,64 +101,101 @@ export function analyseStrides(poseHistory, pixelsPerMeter, videoDims) {
       `need_${MIN_FRAMES}_confident_ankle_frames (L:${leftFrames.length} R:${rightFrames.length})`
     );
   }
+  return frames;
+}
 
-  const leftTimes  = leftFrames.map(f => f.t);
-  const rightTimes = rightFrames.map(f => f.t);
+/** Estimate fps from frame times (median delta). */
+function estimateFps(frames) {
+  if (frames.length < 2) return 10;
+  const deltas = frames
+    .slice(1)
+    .map((f, i) => f.time - frames[i].time)
+    .filter((d) => d > 0);
+  if (deltas.length === 0) return 10;
+  deltas.sort((a, b) => a - b);
+  const medianDt = deltas[Math.floor(deltas.length / 2)];
+  return medianDt > 0 ? 1 / medianDt : 10;
+}
 
-  // Normalised Y: 0=top, 1=bottom. High value = foot near ground.
-  const leftYNorm  = leftFrames.map(f => f.pose.leftAnkle.y  / frameH);
-  const rightYNorm = rightFrames.map(f => f.pose.rightAnkle.y / frameH);
+/**
+ * Build stance events (foot down with x,y for overlay) from PoseAnalysis result frames.
+ */
+function buildStanceEvents(frames) {
+  const events = [];
+  let prevLeft = false;
+  let prevRight = false;
+  for (let i = 0; i < frames.length; i++) {
+    const f = frames[i];
+    if (f.leftOnGround && !prevLeft) {
+      events.push({
+        t: f.time,
+        leg: 'left',
+        x: f.leftAnkleX,
+        y: f.leftAnkleY,
+      });
+    }
+    if (f.rightOnGround && !prevRight) {
+      events.push({
+        t: f.time,
+        leg: 'right',
+        x: f.rightAnkleX,
+        y: f.rightAnkleY,
+      });
+    }
+    prevLeft = f.leftOnGround ?? false;
+    prevRight = f.rightOnGround ?? false;
+  }
+  events.sort((a, b) => a.t - b.t);
+  return events;
+}
 
-  const leftX  = leftFrames.map(f => f.pose.leftAnkle.x);
-  const rightX = rightFrames.map(f => f.pose.rightAnkle.x);
-  const leftY  = leftFrames.map(f => f.pose.leftAnkle.y);
-  const rightY = rightFrames.map(f => f.pose.rightAnkle.y);
+export function analyseStrides(poseHistory, pixelsPerMeter, videoDims) {
+  if (!poseHistory || poseHistory.length < MIN_FRAMES) {
+    return emptyWithReason(
+      !poseHistory
+        ? 'no_pose_history'
+        : `need_${MIN_FRAMES}_frames (have ${poseHistory.length})`
+    );
+  }
+  if (!pixelsPerMeter) {
+    return emptyWithReason('no_calibration');
+  }
 
   const leftPeaks  = findTroughs(smooth(leftYNorm),  leftTimes);
   const rightPeaks = findTroughs(smooth(rightYNorm), rightTimes);
 
-  // Build stance events
-  const stanceEvents = [];
-  leftPeaks.forEach(p  => stanceEvents.push({ t: p.t, leg: 'left',  x: leftX[p.idx],  y: leftY[p.idx]  }));
-  rightPeaks.forEach(p => stanceEvents.push({ t: p.t, leg: 'right', x: rightX[p.idx], y: rightY[p.idx] }));
-  stanceEvents.sort((a, b) => a.t - b.t);
+  const fps = estimateFps(frames);
+  const result = analyzeStridesPose(frames, pixelsPerMeter, fps);
 
-  // Stride metrics from consecutive same-leg footstrikes
-  const computeSameLegStrides = (peaks, xArr) => {
-    const metrics = [];
-    for (let i = 1; i < peaks.length; i++) {
-      const prev = peaks[i - 1];
-      const curr = peaks[i];
-      const dt = curr.t - prev.t;
-      if (dt < MIN_STRIDE_DT || dt > 5) continue;
-      const strideLength = Math.abs((xArr[curr.idx] - xArr[prev.idx]) / pixelsPerMeter);
-      const strideFreq   = 1 / dt;
-      metrics.push({
-        t: parseFloat(curr.t.toFixed(2)),
-        strideLength: parseFloat(strideLength.toFixed(3)),
-        strideFreq:   parseFloat(strideFreq.toFixed(3)),
-      });
-    }
-    return metrics;
-  };
+  const stanceEvents = buildStanceEvents(result.frames);
 
-  const strideMetrics = [
-    ...computeSameLegStrides(leftPeaks,  leftX),
-    ...computeSameLegStrides(rightPeaks, rightX),
-  ].sort((a, b) => a.t - b.t);
+  const strideMetrics = (result.strideEvents || []).map((se) => ({
+    t: parseFloat(Number(se.time).toFixed(2)),
+    strideLength: parseFloat(Number(se.strideLength).toFixed(3)),
+    strideFreq: parseFloat(Number(se.strideFrequency).toFixed(3)),
+  })).sort((a, b) => a.t - b.t);
 
-  // 1-second windowed averages
   const windowedMetrics = [];
   if (strideMetrics.length > 0) {
     const tMin = strideMetrics[0].t;
     const tMax = strideMetrics[strideMetrics.length - 1].t;
     for (let tBucket = Math.floor(tMin); tBucket <= Math.ceil(tMax); tBucket++) {
-      const inWindow = strideMetrics.filter(m => m.t >= tBucket && m.t < tBucket + 1);
+      const inWindow = strideMetrics.filter(
+        (m) => m.t >= tBucket && m.t < tBucket + 1
+      );
       if (inWindow.length === 0) continue;
       windowedMetrics.push({
         t: tBucket,
-        avgStrideLength: parseFloat((inWindow.reduce((s, m) => s + m.strideLength, 0) / inWindow.length).toFixed(3)),
-        avgStrideFreq:   parseFloat((inWindow.reduce((s, m) => s + m.strideFreq,   0) / inWindow.length).toFixed(3)),
+        avgStrideLength: parseFloat(
+          (
+            inWindow.reduce((s, m) => s + m.strideLength, 0) / inWindow.length
+          ).toFixed(3)
+        ),
+        avgStrideFreq: parseFloat(
+          (
+            inWindow.reduce((s, m) => s + m.strideFreq, 0) / inWindow.length
+          ).toFixed(3)
+        ),
       });
     }
   }
@@ -234,29 +279,42 @@ export function analyseStrides(poseHistory, pixelsPerMeter, videoDims) {
       speed: parseFloat(smoothVel[i].toFixed(3)),
       accel: parseFloat(accArr[i].toFixed(3)),
     }));
-  }
 
-  // ── Asymmetry ───────────────────────────────────────────────────────────
-  const leftStrides  = computeSameLegStrides(leftPeaks,  leftX);
-  const rightStrides = computeSameLegStrides(rightPeaks, rightX);
-  const avgArr = arr => arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0;
-  const asymPct = (a, b) => { const m = (a + b) / 2; return m === 0 ? 0 : Math.abs(a - b) / m * 100; };
+  const velocityData = (result.frames || []).map((f) => ({
+    t: parseFloat(Number(f.time).toFixed(2)),
+    speed: parseFloat(Number(f.velocity ?? 0).toFixed(3)),
+    accel: parseFloat(Number(f.acceleration ?? 0).toFixed(3)),
+  }));
 
-  const leftAvgSL  = avgArr(leftStrides.map(m => m.strideLength));
-  const rightAvgSL = avgArr(rightStrides.map(m => m.strideLength));
-  const leftAvgSF  = avgArr(leftStrides.map(m => m.strideFreq));
-  const rightAvgSF = avgArr(rightStrides.map(m => m.strideFreq));
-  const leftAvgCT  = avgArr(leftContactDurations.map(c => c.duration));
-  const rightAvgCT = avgArr(rightContactDurations.map(c => c.duration));
-
+  const asym = result.asymmetry || {};
   const asymmetry = {
-    strideLength:   { pct: asymPct(leftAvgSL, rightAvgSL),  left: leftAvgSL,  right: rightAvgSL  },
-    strideFreq:     { pct: asymPct(leftAvgSF, rightAvgSF),  left: leftAvgSF,  right: rightAvgSF  },
-    contactTime:    { pct: asymPct(leftAvgCT, rightAvgCT),  left: leftAvgCT,  right: rightAvgCT  },
+    strideLength: {
+      pct: asym.strideLengthAsymmetry ?? 0,
+      left: asym.leftAvgStrideLength ?? 0,
+      right: asym.rightAvgStrideLength ?? 0,
+    },
+    strideFreq: {
+      pct: asym.strideFrequencyAsymmetry ?? 0,
+      left: asym.leftAvgStrideFrequency ?? 0,
+      right: asym.rightAvgStrideFrequency ?? 0,
+    },
+    contactTime: {
+      pct: asym.contactTimeAsymmetry ?? 0,
+      left: (asym.leftAvgContactTime ?? 0) * 1000,
+      right: (asym.rightAvgContactTime ?? 0) * 1000,
+    },
   };
 
-  const peakSpeed = velocityData.length ? Math.max(...velocityData.map(d => d.speed)) : 0;
-  const avgSpeed  = velocityData.length ? avgArr(velocityData.map(d => d.speed)) : 0;
+  const leftStrideCount = (result.strideEvents || []).filter(
+    (s) => s.foot === 'left'
+  ).length;
+  const rightStrideCount = (result.strideEvents || []).filter(
+    (s) => s.foot === 'right'
+  ).length;
+  const strideDebug =
+    strideMetrics.length === 0
+      ? `need_2_footstrikes_per_leg (L:${leftStrideCount} R:${rightStrideCount})`
+      : null;
 
   const strideDebug =
     strideMetrics.length === 0

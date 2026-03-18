@@ -11,6 +11,22 @@
 
 const STANCE_RATIO = 0.62; // fraction of stride that is stance phase
 
+const GAIT_DEBUG_HINTS = {
+  no_pose_history: 'Start tracking to record pose data.',
+  no_calibration: 'Set two calibration markers and distance to enable gait analysis.',
+  need_5_frames: 'Keep tracking a bit longer to collect enough frames.',
+  need_5_confident_ankle_frames: 'Keep ankles visible in frame for reliable detection.',
+  need_2_footstrikes_per_leg: 'Walk a few steps so we can detect at least 2 foot strikes per leg.',
+};
+
+function gaitDebugHint(debug) {
+  if (!debug || typeof debug !== 'string') return null;
+  if (debug.startsWith('need_5_frames')) return GAIT_DEBUG_HINTS.need_5_frames;
+  if (debug.startsWith('need_5_confident')) return GAIT_DEBUG_HINTS.need_5_confident_ankle_frames;
+  if (debug.startsWith('need_2_footstrikes')) return GAIT_DEBUG_HINTS.need_2_footstrikes_per_leg;
+  return GAIT_DEBUG_HINTS[debug] || null;
+}
+
 const PHASE_COLORS = {
   stance_left:  { fill: 'hsl(145 70% 45%)',  label: 'L Stance' },
   swing_left:   { fill: 'hsl(145 70% 20%)',  label: 'L Swing'  },
@@ -37,8 +53,9 @@ function buildPhases(stanceEvents, leg) {
   return phases;
 }
 
-export default function GaitTimeline({ stanceEvents, seekTime, onSeek }) {
+export default function GaitTimeline({ stanceEvents, seekTime, onSeek, strideDebug }) {
   if (!stanceEvents || stanceEvents.length < 2) {
+    const hint = gaitDebugHint(strideDebug);
     return (
       <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
         <div className="text-center space-y-2">
@@ -47,6 +64,7 @@ export default function GaitTimeline({ stanceEvents, seekTime, onSeek }) {
           </div>
           <p>No gait events detected yet</p>
           <p className="text-xs text-muted-foreground/60">Requires ankle tracking with ≥ 2 footstrikes per leg</p>
+          {hint && <p className="text-xs text-amber-600 dark:text-amber-500 mt-1">{hint}</p>}
         </div>
       </div>
     );
