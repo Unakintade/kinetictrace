@@ -21,6 +21,8 @@ import { deriveThresholdsFromLabels } from '@/lib/gaitPhases';
 import { useSession } from '@/lib/SessionContext';
 
 export default function VeloTrack() {
+  const { videoUrl, loadVideo, allGaitSessions, activeGaitSession, setActiveGaitSession } = useSession();
+
   const [videoSource, setVideoSource] = useState(null);
   const [markers, setMarkers] = useState([]); // calibration markers [{x,y}]
   const [realWorldDistance, setRealWorldDistance] = useState(1.0); // meters
@@ -31,8 +33,6 @@ export default function VeloTrack() {
   const [seekTime, setSeekTime] = useState(null);
   const [poseHistory, setPoseHistory] = useState([]); // [{t, pose}] — always within [0, videoDuration]
   const [videoDims, setVideoDims] = useState({ w: 640, h: 360 });
-  const [gaitLabels, setGaitLabels] = useState(null); // derived thresholds from labeler
-  const [allGaitSessions, setAllGaitSessions] = useState([]); // all saved sessions for picker
 
   const PLAYBACK_RATE = 0.5; // half speed for detailed analysis
 
