@@ -188,8 +188,9 @@ export default function VeloTrack() {
 
   const startTracking = () => {
     startTimeRef.current = Date.now();
-    loopTimeOffsetRef.current = 0;
+    loopCountRef.current = 0;
     lastVideoTimeRef.current = 0;
+    videoDurationRef.current = 0;
     const video = canvasRef.current?.getVideo?.();
     if (video) {
       video.playbackRate = PLAYBACK_RATE;
