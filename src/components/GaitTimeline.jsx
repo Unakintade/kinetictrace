@@ -53,7 +53,9 @@ function buildPhases(stanceEvents, leg) {
   return phases;
 }
 
-export default function GaitTimeline({ stanceEvents, seekTime, onSeek, strideDebug }) {
+import { getPhaseColor, getPhaseLabel } from '@/lib/gaitPhases';
+
+export default function GaitTimeline({ stanceEvents, seekTime, onSeek, strideDebug, referenceFrames }) {
   if (!stanceEvents || stanceEvents.length < 2) {
     const hint = gaitDebugHint(strideDebug);
     return (
