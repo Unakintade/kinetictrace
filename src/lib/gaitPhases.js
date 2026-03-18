@@ -3,17 +3,19 @@
  */
 
 export const GAIT_PHASES = [
-  { id: 'touch_down',   label: 'Touch Down',  color: '#22c55e', group: 'stance' },
-  { id: 'mid_stance',   label: 'Mid Stance',  color: '#16a34a', group: 'stance' },
-  { id: 'toe_off',      label: 'Toe Off',     color: '#84cc16', group: 'stance' },
-  { id: 'early_flight', label: 'Early Flight',color: '#f97316', group: 'flight' },
-  { id: 'mid_flight',   label: 'Mid Flight',  color: '#f59e0b', group: 'flight' },
-  { id: 'late_flight',  label: 'Late Flight', color: '#fb923c', group: 'flight' },
+  { id: 'touch_down',      label: 'Touch Down',     color: '#22c55e', group: 'stance' },
+  { id: 'mid_stance',      label: 'Mid Stance',     color: '#16a34a', group: 'stance' },
+  { id: 'toe_off',         label: 'Toe Off',        color: '#84cc16', group: 'stance' },
+  { id: 'early_flight',    label: 'Early Flight',   color: '#f97316', group: 'flight' },
+  { id: 'mid_flight',      label: 'Mid Flight',     color: '#f59e0b', group: 'flight' },
+  { id: 'late_flight',     label: 'Late Flight',    color: '#fb923c', group: 'flight' },
+  { id: 'heel_recovery',   label: 'Heel Recovery',  color: '#a78bfa', group: 'recovery' },
 ];
 
 export const PHASE_GROUPS = {
-  stance: ['touch_down', 'mid_stance', 'toe_off'],
-  flight: ['early_flight', 'mid_flight', 'late_flight'],
+  stance:   ['touch_down', 'mid_stance', 'toe_off'],
+  flight:   ['early_flight', 'mid_flight', 'late_flight'],
+  recovery: ['heel_recovery'],
 };
 
 export function isStancePhase(phaseId) {
