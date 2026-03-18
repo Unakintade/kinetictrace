@@ -33,6 +33,8 @@ export default function VeloTrack() {
   const canvasRef = useRef(null);
   const trackingIntervalRef = useRef(null);
   const startTimeRef = useRef(null);
+  const loopTimeOffsetRef = useRef(0); // accumulated duration across video loops
+  const lastVideoTimeRef = useRef(0);  // to detect loop resets
 
   // Compute pixels per meter from calibration markers
   const pixelsPerMeter = markers.length === 2
