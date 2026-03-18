@@ -222,9 +222,9 @@ export default function VeloTrack() {
         </aside>
 
         {/* Main area */}
-        <main className="flex-1 flex flex-col gap-0 min-h-0 overflow-hidden">
+        <main className="flex-1 flex flex-col gap-0 overflow-y-auto">
           {/* Video canvas */}
-          <div className="flex-1 min-h-0 p-4 flex items-center justify-center bg-background/50">
+          <div className="p-4 flex items-center justify-center bg-background/50" style={{ minHeight: '400px' }}>
             {videoSource ? (
               <VelocityCanvas
                 ref={canvasRef}
