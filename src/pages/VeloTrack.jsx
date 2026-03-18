@@ -422,6 +422,7 @@ export default function VeloTrack() {
                 stanceEvents={strideAnalysis.stanceEvents}
                 seekTime={seekTime}
                 onSeek={handleSeek}
+                referenceFrames={gaitLabels?.frames}
               />
             </div>
           </div>
