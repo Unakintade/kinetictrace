@@ -21,9 +21,7 @@ import { deriveThresholdsFromLabels } from '@/lib/gaitPhases';
 import { useSession } from '@/lib/SessionContext';
 
 export default function VeloTrack() {
-  const { videoUrl, loadVideo, allGaitSessions, activeGaitSession, setActiveGaitSession } = useSession();
-
-  const [videoSource, setVideoSource] = useState(null);
+  const { videoSource, allGaitSessions, activeGaitSession, setActiveGaitSession } = useSession();
   const [markers, setMarkers] = useState([]); // calibration markers [{x,y}]
   const [realWorldDistance, setRealWorldDistance] = useState(1.0); // meters
   const [trackingMode, setTrackingMode] = useState('marker'); // 'marker' | 'track'
@@ -254,11 +252,11 @@ export default function VeloTrack() {
           {allGaitSessions.length > 0 && (
             <div className="flex items-center gap-2">
               <Select
-                value={activeGaitSession?.id ?? '__none__'}
+                value={gaitLabels?.id ?? '__none__'}
                 onValueChange={id => {
-                  if (id === '__none__') { setActiveGaitSession(null); return; }
+                  if (id === '__none__') { setGaitLabels(null); return; }
                   const s = allGaitSessions.find(s => s.id === id);
-                  if (s) setActiveGaitSession(s);
+                  if (s) setGaitLabels(s);
                 }}
               >
                 <SelectTrigger className="h-7 text-xs w-44 border-accent/30 text-accent">
@@ -273,8 +271,8 @@ export default function VeloTrack() {
                   ))}
                 </SelectContent>
               </Select>
-              {activeGaitSession && (
-                <span className="text-xs text-accent/70">✦ {activeGaitSession.frames?.length} ref frames</span>
+              {gaitLabels && (
+                <span className="text-xs text-accent/70">✦ {gaitLabels.frames?.length} ref frames</span>
               )}
             </div>
           )}
@@ -412,7 +410,7 @@ export default function VeloTrack() {
                 stanceEvents={strideAnalysis.stanceEvents}
                 seekTime={seekTime}
                 onSeek={handleSeek}
-                referenceFrames={activeGaitSession?.frames}
+                referenceFrames={gaitLabels?.frames}
               />
             </div>
           </div>
