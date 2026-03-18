@@ -136,18 +136,16 @@ export default function GaitLabeler() {
   // Label current frame
   const labelFrame = useCallback((leg, phase) => {
     const t = parseFloat(videoRef.current?.currentTime?.toFixed(3) ?? '0');
+    const angles = currentAngles; // snapshot current angles into the label
 
     // Auto-set opposite leg to mid_flight when we hit mid_flight on either leg
     let autoOtherPhase = null;
     if (phase === 'mid_flight') autoOtherPhase = 'mid_flight';
 
-    setCurrentFrame(prev => {
-      const next = {
-        leftPhase:  leg === 'left'  ? phase : (autoOtherPhase ?? prev.leftPhase),
-        rightPhase: leg === 'right' ? phase : (autoOtherPhase ?? prev.rightPhase),
-      };
-      return next;
-    });
+    setCurrentFrame(prev => ({
+      leftPhase:  leg === 'left'  ? phase : (autoOtherPhase ?? prev.leftPhase),
+      rightPhase: leg === 'right' ? phase : (autoOtherPhase ?? prev.rightPhase),
+    }));
 
     setLabeledFrames(prev => {
       const idx = prev.findIndex(f => Math.abs(f.t - t) < 0.02);
@@ -155,6 +153,11 @@ export default function GaitLabeler() {
         t,
         leftPhase:  leg === 'left'  ? phase : (autoOtherPhase ?? (prev[idx]?.leftPhase ?? null)),
         rightPhase: leg === 'right' ? phase : (autoOtherPhase ?? (prev[idx]?.rightPhase ?? null)),
+        // Store angles at labeling time
+        leftKneeAngle:  angles?.leftKnee  ?? prev[idx]?.leftKneeAngle  ?? null,
+        rightKneeAngle: angles?.rightKnee ?? prev[idx]?.rightKneeAngle ?? null,
+        leftHipAngle:   angles?.leftHip   ?? prev[idx]?.leftHipAngle   ?? null,
+        rightHipAngle:  angles?.rightHip  ?? prev[idx]?.rightHipAngle  ?? null,
       };
       if (idx >= 0) {
         const updated = [...prev];
@@ -163,7 +166,7 @@ export default function GaitLabeler() {
       }
       return [...prev, entry].sort((a, b) => a.t - b.t);
     });
-  }, []);
+  }, [currentAngles]);
 
   // Keyboard shortcuts
   useEffect(() => {
