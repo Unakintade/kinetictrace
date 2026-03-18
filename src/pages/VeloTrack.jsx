@@ -101,7 +101,7 @@ export default function VeloTrack() {
       ? deriveThresholdsFromLabels(refFrames, poseHistory)
       : null;
     return analyseStrides(poseHistory, pixelsPerMeter, videoDims, labelThresholds, refFrames);
-  }, [poseHistory, pixelsPerMeter, videoDims, gaitLabels]);
+  }, [poseHistory, pixelsPerMeter, videoDims, activeGaitSession]);
 
   // Auto-stop once we have ≥4 strides per leg detected
   useEffect(() => {
