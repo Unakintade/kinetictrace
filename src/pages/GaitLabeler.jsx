@@ -418,13 +418,28 @@ export default function GaitLabeler() {
 
                   {/* Phase selector */}
                   <div className="bg-card/50 border border-border/50 rounded-lg p-3">
-                    <p className="text-xs text-muted-foreground font-medium mb-2">Current Frame Classification</p>
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-xs text-muted-foreground font-medium">Current Frame Classification</p>
+                      <span className={`text-[10px] font-mono ${poseReady ? 'text-green-400' : 'text-yellow-400'}`}>
+                        {poseReady ? '● AI Ready' : '● Loading AI…'}
+                      </span>
+                    </div>
                     <GaitPhaseSelector
                       leftPhase={currentFrame.leftPhase}
                       rightPhase={currentFrame.rightPhase}
                       onLeftChange={p => labelFrame('left', p)}
                       onRightChange={p => labelFrame('right', p)}
                     />
+                  </div>
+
+                  {/* Joint angle gauges */}
+                  <div className="bg-card/50 border border-border/50 rounded-lg p-3">
+                    <AngleGauges angles={currentAngles} />
+                    {!currentAngles && (
+                      <p className="text-[10px] text-muted-foreground/60 text-center py-1">
+                        Angles appear when AI detects a person
+                      </p>
+                    )}
                   </div>
 
                   {/* Stats */}
