@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
-import { useSession } from '@/lib/SessionContext';
 import { Link } from 'react-router-dom';
 import { Activity, ArrowLeft, Save, Trash2, Download, Upload, ChevronLeft, ChevronRight, SkipBack, SkipForward, Cpu, CheckCircle2 } from 'lucide-react';
 import GaitPhaseSelector from '@/components/GaitPhaseSelector';
@@ -12,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import usePoseDetector from '@/hooks/usePoseDetector';
 import ReviewVideo from '@/components/ReviewVideo';
+import { useSession } from '@/lib/SessionContext';
 
 function computeAngle(ax, ay, bx, by, cx, cy) {
   const v1x = ax - bx, v1y = ay - by;
@@ -69,12 +69,9 @@ const SCAN_PASSES = 2;
 const SCAN_INTERVAL_MS = 80; // ms between sampled frames during scan
 
 export default function GaitLabeler() {
-  const { videoFile: sharedVideoFile, videoUrl: sharedVideoUrl, loadVideo, upsertSession, removeSession, activeGaitSession, setActiveGaitSession } = useSession();
+  const { videoFile, videoUrl, videoName: sharedVideoName, loadVideo, allGaitSessions, activeGaitSession, upsertSession, removeSession } = useSession();
 
   const videoRef = useRef(null);
-  // Use shared video if available; local state for when user uploads directly here
-  const [videoFile, setVideoFile] = useState(sharedVideoFile);
-  const [videoUrl, setVideoUrl] = useState(sharedVideoUrl);
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
   const [currentFrame, setCurrentFrame] = useState({ leftPhase: null, rightPhase: null });
@@ -82,11 +79,9 @@ export default function GaitLabeler() {
   const { ready: poseReady, detectPerson } = usePoseDetector();
   const poseDetectRef = useRef(null);
   const [labeledFrames, setLabeledFrames] = useState([]);
-  const [videoName, setVideoName] = useState('');
+  const [videoName, setVideoName] = useState(sharedVideoName || '');
   const [sessionNotes, setSessionNotes] = useState('');
-  // Sessions are managed by SessionContext; keep a local alias for selected session
-  const savedSessions = useSession().allGaitSessions;
-  const [selectedSession, setSelectedSession] = useState(activeGaitSession);
+  const [selectedSession, setSelectedSession] = useState(activeGaitSession ?? null);
   const [isSaving, setIsSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState(null);
   const frameStepRef = useRef(1 / 30);
@@ -100,18 +95,13 @@ export default function GaitLabeler() {
   const scanTimerRef = useRef(null);
   const scanPassRef = useRef(0);
 
-
-
   // Handle video file upload
   const handleFileUpload = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
     stopScan();
-    setVideoFile(file);
-    setVideoName(file.name);
     loadVideo(file);
-    const url = URL.createObjectURL(file);
-    setVideoUrl(url);
+    setVideoName(file.name);
     setLabeledFrames([]);
     setCurrentFrame({ leftPhase: null, rightPhase: null });
     setScanPhase('idle');
@@ -413,8 +403,7 @@ export default function GaitLabeler() {
         saved = await base44.entities.GaitLabel.create(data);
       }
       setSelectedSession(saved);
-      upsertSession(saved);
-      setActiveGaitSession(saved);
+      upsertSession(saved); // sync to shared context (also sets activeGaitSession)
       setSaveMsg('Saved!');
       setTimeout(() => setSaveMsg(null), 2000);
     } finally {
@@ -433,7 +422,7 @@ export default function GaitLabeler() {
 
   const deleteSession = async (id) => {
     await base44.entities.GaitLabel.delete(id);
-    setSavedSessions(prev => prev.filter(s => s.id !== id));
+    removeSession(id); // sync to shared context
     if (selectedSession?.id === id) { setSelectedSession(null); setLabeledFrames([]); }
   };
 
@@ -501,6 +490,7 @@ export default function GaitLabeler() {
               <input type="file" accept="video/*" className="hidden" onChange={handleFileUpload} />
             </label>
             {videoFile && <p className="text-xs text-primary mt-2 truncate">{videoFile.name}</p>}
+            {!videoFile && videoUrl && <p className="text-xs text-primary mt-2 truncate">Shared video loaded</p>}
           </div>
 
           <div className="p-3 border-b border-border/30">
@@ -516,9 +506,9 @@ export default function GaitLabeler() {
 
           <div className="flex-1 p-3">
             <p className="text-xs text-muted-foreground font-medium mb-2">Saved Sessions</p>
-            {savedSessions.length === 0 && <p className="text-xs text-muted-foreground/60">No saved sessions yet</p>}
+            {allGaitSessions.length === 0 && <p className="text-xs text-muted-foreground/60">No saved sessions yet</p>}
             <div className="space-y-1.5">
-              {savedSessions.map(s => (
+              {allGaitSessions.map(s => (
                 <div
                   key={s.id}
                   className={`group relative rounded-lg border p-2 cursor-pointer transition-colors ${
