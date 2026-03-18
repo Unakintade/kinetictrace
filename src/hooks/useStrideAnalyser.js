@@ -115,14 +115,31 @@ function buildContactDurations(yNorm, times, threshold = 0.25) {
 }
 
 /**
+ * Find the nearest reference frame within a tolerance window.
+ * Returns { leftPhase, rightPhase, leftKneeAngle, rightKneeAngle, leftHipAngle, rightHipAngle } or null.
+ */
+function nearestRefFrame(refFrames, t, windowSec = 0.12) {
+  if (!refFrames?.length) return null;
+  let best = null, bestDt = Infinity;
+  for (const rf of refFrames) {
+    const dt = Math.abs(rf.t - t);
+    if (dt < windowSec && dt < bestDt) { best = rf; bestDt = dt; }
+  }
+  return best;
+}
+
+/**
  * @param {Array} poseHistory
  * @param {number} pixelsPerMeter
  * @param {object} videoDims
  * @param {{ leftContactThreshold?: number, rightContactThreshold?: number, sampleCount?: number } | null} labelThresholds
  *   Optional calibration derived from manually labeled frames.
  *   Thresholds are fractions [0,1] of the normalised ankle-Y range — higher = more permissive contact detection.
+ * @param {Array | null} referenceFrames
+ *   Full labeled frames from a saved GaitLabel session. Used to annotate stance events with reference
+ *   phase classifications and enrich joint angle data when live pose confidence is low.
  */
-export function analyseStrides(poseHistory, pixelsPerMeter, videoDims, labelThresholds = null) {
+export function analyseStrides(poseHistory, pixelsPerMeter, videoDims, labelThresholds = null, referenceFrames = null) {
   if (!poseHistory || poseHistory.length < MIN_FRAMES) {
     return emptyWithReason(
       !poseHistory ? 'no_pose_history' : `need_${MIN_FRAMES}_frames (have ${poseHistory.length})`
