@@ -25,7 +25,7 @@ export default function VeloTrack() {
   const [trackedPoints, setTrackedPoints] = useState([]); // [{x, y, t}]
   const [velocityData, setVelocityData] = useState([]);
   const [seekTime, setSeekTime] = useState(null);
-  const [poseHistory, setPoseHistory] = useState([]); // [{t, pose}]
+  const [poseHistory, setPoseHistory] = useState([]); // [{t, pose}] — always within [0, videoDuration]
   const [videoDims, setVideoDims] = useState({ w: 640, h: 360 });
 
   const PLAYBACK_RATE = 0.5; // half speed for detailed analysis
@@ -33,8 +33,9 @@ export default function VeloTrack() {
   const canvasRef = useRef(null);
   const trackingIntervalRef = useRef(null);
   const startTimeRef = useRef(null);
-  const loopTimeOffsetRef = useRef(0); // accumulated duration across video loops
+  const loopCountRef = useRef(0);      // how many times video has looped
   const lastVideoTimeRef = useRef(0);  // to detect loop resets
+  const videoDurationRef = useRef(0);  // natural duration of the video
 
   // Compute pixels per meter from calibration markers
   const pixelsPerMeter = markers.length === 2
