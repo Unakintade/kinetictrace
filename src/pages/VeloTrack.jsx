@@ -254,11 +254,11 @@ export default function VeloTrack() {
           {allGaitSessions.length > 0 && (
             <div className="flex items-center gap-2">
               <Select
-                value={gaitLabels?.id ?? '__none__'}
+                value={activeGaitSession?.id ?? '__none__'}
                 onValueChange={id => {
-                  if (id === '__none__') { setGaitLabels(null); return; }
+                  if (id === '__none__') { setActiveGaitSession(null); return; }
                   const s = allGaitSessions.find(s => s.id === id);
-                  if (s) setGaitLabels(s);
+                  if (s) setActiveGaitSession(s);
                 }}
               >
                 <SelectTrigger className="h-7 text-xs w-44 border-accent/30 text-accent">
@@ -273,8 +273,8 @@ export default function VeloTrack() {
                   ))}
                 </SelectContent>
               </Select>
-              {gaitLabels && (
-                <span className="text-xs text-accent/70">✦ {gaitLabels.frames?.length} ref frames</span>
+              {activeGaitSession && (
+                <span className="text-xs text-accent/70">✦ {activeGaitSession.frames?.length} ref frames</span>
               )}
             </div>
           )}
