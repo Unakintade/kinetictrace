@@ -507,9 +507,13 @@ export default function GaitLabeler() {
                   <table className="w-full text-xs border-collapse">
                     <thead>
                       <tr className="text-muted-foreground border-b border-border/40">
-                        <th className="text-left py-1.5 pr-4 font-medium">Time (s)</th>
-                        <th className="text-left py-1.5 pr-4 font-medium">Left Phase</th>
-                        <th className="text-left py-1.5 pr-4 font-medium">Right Phase</th>
+                        <th className="text-left py-1.5 pr-3 font-medium">Time (s)</th>
+                        <th className="text-left py-1.5 pr-3 font-medium">Left Phase</th>
+                        <th className="text-left py-1.5 pr-3 font-medium">Right Phase</th>
+                        <th className="text-right py-1.5 pr-3 font-medium text-green-400/70">L Knee</th>
+                        <th className="text-right py-1.5 pr-3 font-medium text-green-400/70">L Hip</th>
+                        <th className="text-right py-1.5 pr-3 font-medium text-orange-400/70">R Knee</th>
+                        <th className="text-right py-1.5 pr-3 font-medium text-orange-400/70">R Hip</th>
                         <th className="w-8" />
                       </tr>
                     </thead>
