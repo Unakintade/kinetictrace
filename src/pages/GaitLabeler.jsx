@@ -4,10 +4,33 @@ import { Link } from 'react-router-dom';
 import { Activity, ArrowLeft, Save, Trash2, Download, Upload, ChevronLeft, ChevronRight, SkipBack, SkipForward } from 'lucide-react';
 import GaitPhaseSelector from '@/components/GaitPhaseSelector';
 import GaitLabelTimeline from '@/components/GaitLabelTimeline';
-import { GAIT_PHASES, getPhaseColor, getPhaseLabel, isStancePhase } from '@/lib/gaitPhases';
+import AngleGauges from '@/components/AngleGauges';
+import { GAIT_PHASES, getPhaseColor, getPhaseLabel } from '@/lib/gaitPhases';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import usePoseDetector from '@/hooks/usePoseDetector';
+
+function computeAngle(ax, ay, bx, by, cx, cy) {
+  const v1x = ax - bx, v1y = ay - by;
+  const v2x = cx - bx, v2y = cy - by;
+  const dot = v1x * v2x + v1y * v2y;
+  const mag = Math.hypot(v1x, v1y) * Math.hypot(v2x, v2y);
+  if (mag === 0) return null;
+  return parseFloat((Math.acos(Math.max(-1, Math.min(1, dot / mag))) * (180 / Math.PI)).toFixed(1));
+}
+
+function anglesFromPose(pose) {
+  if (!pose) return null;
+  const { leftHip, rightHip, leftKnee, rightKnee, leftAnkle, rightAnkle } = pose;
+  const ok = kp => kp && kp.score > 0.15;
+  return {
+    leftKnee:  ok(leftHip)  && ok(leftKnee)  && ok(leftAnkle)  ? computeAngle(leftHip.x,  leftHip.y,  leftKnee.x,  leftKnee.y,  leftAnkle.x,  leftAnkle.y)  : null,
+    rightKnee: ok(rightHip) && ok(rightKnee) && ok(rightAnkle) ? computeAngle(rightHip.x, rightHip.y, rightKnee.x, rightKnee.y, rightAnkle.x, rightAnkle.y) : null,
+    leftHip:   ok(leftHip)  && ok(leftKnee)                    ? computeAngle(leftHip.x,  leftHip.y  - 100, leftHip.x,  leftHip.y,  leftKnee.x,  leftKnee.y)  : null,
+    rightHip:  ok(rightHip) && ok(rightKnee)                   ? computeAngle(rightHip.x, rightHip.y - 100, rightHip.x, rightHip.y, rightKnee.x, rightKnee.y) : null,
+  };
+}
 
 const PHASE_KEYS = {
   // Left leg keyboard shortcuts
