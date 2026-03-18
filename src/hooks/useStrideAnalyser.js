@@ -86,6 +86,7 @@ function computeAngle(ax, ay, bx, by, cx, cy) {
  * (minimum Y = lowest arc point = stance / ground contact).
  */
 function buildContactDurations(yNorm, times, threshold = 0.25) {
+  if (!yNorm.length) return [];
   const maxY = Math.max(...yNorm);
   const minY = Math.min(...yNorm);
   const range = Math.max(maxY - minY, 0.01);
