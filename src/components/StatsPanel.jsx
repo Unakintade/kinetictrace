@@ -11,9 +11,11 @@ export default function StatsPanel({ velocityData, pixelsPerMeter, strideMetrics
   const strideLengths = hasStride ? strideMetrics.map(m => m.strideLength) : [];
   const strideFreqs = hasStride ? strideMetrics.map(m => m.strideFreq) : [];
   const avgStrideLength = strideLengths.length ? (strideLengths.reduce((a, b) => a + b, 0) / strideLengths.length).toFixed(2) : '—';
-  const avgStrideFreq = strideFreqs.length ? (strideFreqs.reduce((a, b) => a + b, 0) / strideFreqs.length).toFixed(2) : '—';
+  const avgStrideFreqVal = strideFreqs.length ? strideFreqs.reduce((a, b) => a + b, 0) / strideFreqs.length : null;
+  const avgStrideFreq = avgStrideFreqVal !== null ? avgStrideFreqVal.toFixed(2) : '—';
   const lastStrideLength = strideLengths.length ? strideLengths[strideLengths.length - 1].toFixed(2) : '—';
-  const cadence = strideFreqs.length ? (strideFreqs[strideFreqs.length - 1] * 60 * 2).toFixed(0) : '—';
+  // Cadence (steps/min) = avg stride freq (strides/s per leg) × 2 legs × 60s
+  const cadence = avgStrideFreqVal !== null ? (avgStrideFreqVal * 2 * 60).toFixed(0) : '—';
 
   const stats = [
     { label: 'Current Speed', value: `${lastSpeed} m/s`, color: 'text-chart-1' },
