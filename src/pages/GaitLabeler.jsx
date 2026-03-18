@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import usePoseDetector from '@/hooks/usePoseDetector';
 import ReviewVideo from '@/components/ReviewVideo';
+import { useSession } from '@/lib/SessionContext';
 
 function computeAngle(ax, ay, bx, by, cx, cy) {
   const v1x = ax - bx, v1y = ay - by;
