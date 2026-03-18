@@ -89,7 +89,9 @@ export function analyseStrides(poseHistory, pixelsPerMeter, videoDims) {
   const rightFrames = uniqueHistory.filter(f => f.pose?.rightAnkle?.score > 0.2);
 
   if (leftFrames.length < MIN_FRAMES && rightFrames.length < MIN_FRAMES) {
-    return { stanceEvents: [], strideMetrics: [], windowedMetrics: [] };
+    return emptyWithReason(
+      `need_${MIN_FRAMES}_confident_ankle_frames (L:${leftFrames.length} R:${rightFrames.length})`
+    );
   }
 
   const leftTimes  = leftFrames.map(f => f.t);
@@ -256,6 +258,11 @@ export function analyseStrides(poseHistory, pixelsPerMeter, videoDims) {
   const peakSpeed = velocityData.length ? Math.max(...velocityData.map(d => d.speed)) : 0;
   const avgSpeed  = velocityData.length ? avgArr(velocityData.map(d => d.speed)) : 0;
 
+  const strideDebug =
+    strideMetrics.length === 0
+      ? `need_2_footstrikes_per_leg (L:${leftPeaks.length} R:${rightPeaks.length})`
+      : null;
+
   return {
     stanceEvents,
     strideMetrics,
@@ -267,5 +274,6 @@ export function analyseStrides(poseHistory, pixelsPerMeter, videoDims) {
     asymmetry,
     peakSpeed: parseFloat(peakSpeed.toFixed(3)),
     avgSpeed:  parseFloat(avgSpeed.toFixed(3)),
+    strideDebug,
   };
 }
