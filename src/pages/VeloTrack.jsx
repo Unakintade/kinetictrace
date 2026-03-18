@@ -146,16 +146,17 @@ export default function VeloTrack() {
 
   const startTracking = () => {
     startTimeRef.current = Date.now();
+    loopTimeOffsetRef.current = 0;
+    lastVideoTimeRef.current = 0;
     const video = canvasRef.current?.getVideo?.();
-    if (video) video.playbackRate = PLAYBACK_RATE;
+    if (video) {
+      video.playbackRate = PLAYBACK_RATE;
+      video.currentTime = 0;
+    }
     setIsTracking(true);
     setTrackedPoints([]);
     setVelocityData([]);
     setPoseHistory([]);
-    // Clear any stale pose history from previous loop
-    video?.addEventListener('seeked', () => {
-      setPoseHistory([]);
-    }, { once: true });
   };
 
   const stopTracking = () => {
