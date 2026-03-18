@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import { Upload, Camera, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-export default function VideoSource({ onVideoReady }) {
+export default function VideoSource({ onVideoReady, onFileSelected }) {
   const [mode, setMode] = useState(null); // 'upload' | 'webcam'
   const [fileName, setFileName] = useState('');
   const fileInputRef = useRef(null);
