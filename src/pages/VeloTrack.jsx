@@ -14,7 +14,10 @@ import AsymmetryPanel from '../components/AsymmetryPanel';
 import VelocityAccelChart from '../components/VelocityAccelChart';
 import { warpPoint } from '../hooks/useHomography';
 import { analyseStrides } from '../hooks/useStrideAnalyser';
-import { Activity } from 'lucide-react';
+import { Activity, FlaskConical } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { deriveThresholdsFromLabels } from '@/lib/gaitPhases';
+import { base44 } from '@/api/base44Client';
 
 export default function VeloTrack() {
   const [videoSource, setVideoSource] = useState(null);
@@ -27,6 +30,7 @@ export default function VeloTrack() {
   const [seekTime, setSeekTime] = useState(null);
   const [poseHistory, setPoseHistory] = useState([]); // [{t, pose}] — always within [0, videoDuration]
   const [videoDims, setVideoDims] = useState({ w: 640, h: 360 });
+  const [gaitLabels, setGaitLabels] = useState(null); // derived thresholds from labeler
 
   const PLAYBACK_RATE = 0.5; // half speed for detailed analysis
 
