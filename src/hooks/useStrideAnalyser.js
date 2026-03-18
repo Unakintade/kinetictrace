@@ -57,9 +57,20 @@ function smooth(arr) {
   });
 }
 
+const EMPTY = { stanceEvents: [], strideMetrics: [], windowedMetrics: [] };
+
+function emptyWithReason(reason) {
+  return { ...EMPTY, strideDebug: reason };
+}
+
 export function analyseStrides(poseHistory, pixelsPerMeter, videoDims) {
-  if (!poseHistory || poseHistory.length < MIN_FRAMES || !pixelsPerMeter) {
-    return { stanceEvents: [], strideMetrics: [], windowedMetrics: [] };
+  if (!poseHistory || poseHistory.length < MIN_FRAMES) {
+    return emptyWithReason(
+      !poseHistory ? 'no_pose_history' : `need_${MIN_FRAMES}_frames (have ${poseHistory.length})`
+    );
+  }
+  if (!pixelsPerMeter) {
+    return emptyWithReason('no_calibration');
   }
 
   const frameH = videoDims?.h || 360;
