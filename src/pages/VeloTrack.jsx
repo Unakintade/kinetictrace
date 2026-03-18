@@ -21,12 +21,7 @@ import { deriveThresholdsFromLabels } from '@/lib/gaitPhases';
 import { useSession } from '@/lib/SessionContext';
 
 export default function VeloTrack() {
-  const { videoFile, videoUrl, loadVideo, allGaitSessions, activeGaitSession, setActiveGaitSession } = useSession();
-
-  // Restore video source from shared context when navigating back
-  const [videoSource, setVideoSource] = useState(() =>
-    videoUrl ? { type: 'upload', url: videoUrl } : null
-  );
+  const { videoSource, allGaitSessions, activeGaitSession, setActiveGaitSession } = useSession();
   const [markers, setMarkers] = useState([]); // calibration markers [{x,y}]
   const [realWorldDistance, setRealWorldDistance] = useState(1.0); // meters
   const [trackingMode, setTrackingMode] = useState('marker'); // 'marker' | 'track'
@@ -257,11 +252,11 @@ export default function VeloTrack() {
           {allGaitSessions.length > 0 && (
             <div className="flex items-center gap-2">
               <Select
-                value={activeGaitSession?.id ?? '__none__'}
+                value={gaitLabels?.id ?? '__none__'}
                 onValueChange={id => {
-                  if (id === '__none__') { setActiveGaitSession(null); return; }
+                  if (id === '__none__') { setGaitLabels(null); return; }
                   const s = allGaitSessions.find(s => s.id === id);
-                  if (s) setActiveGaitSession(s);
+                  if (s) setGaitLabels(s);
                 }}
               >
                 <SelectTrigger className="h-7 text-xs w-44 border-accent/30 text-accent">
@@ -276,8 +271,8 @@ export default function VeloTrack() {
                   ))}
                 </SelectContent>
               </Select>
-              {activeGaitSession && (
-                <span className="text-xs text-accent/70">✦ {activeGaitSession.frames?.length} ref frames</span>
+              {gaitLabels && (
+                <span className="text-xs text-accent/70">✦ {gaitLabels.frames?.length} ref frames</span>
               )}
             </div>
           )}
@@ -296,7 +291,7 @@ export default function VeloTrack() {
       <div className="flex flex-col lg:flex-row gap-0 min-h-[calc(100vh-65px)]">
         {/* Left sidebar: controls */}
         <aside className="w-full lg:w-72 shrink-0 border-b lg:border-b-0 lg:border-r border-border/50 p-5 flex flex-col gap-6 lg:sticky lg:top-0 lg:h-screen lg:overflow-y-auto">
-          <VideoSource onVideoReady={setVideoSource} />
+          <VideoSource />
 
           <div className="border-t border-border/30" />
 
@@ -415,7 +410,7 @@ export default function VeloTrack() {
                 stanceEvents={strideAnalysis.stanceEvents}
                 seekTime={seekTime}
                 onSeek={handleSeek}
-                referenceFrames={activeGaitSession?.frames}
+                referenceFrames={gaitLabels?.frames}
               />
             </div>
           </div>
