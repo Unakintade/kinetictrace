@@ -543,20 +543,6 @@ export default function GaitLabeler() {
 
         {/* Main area */}
         <main className="flex-1 flex flex-col overflow-hidden">
-          {/* Single persistent video element — always mounted when videoUrl exists */}
-          {videoUrl && (
-            <video
-              ref={videoRef}
-              src={videoUrl}
-              onLoadedMetadata={handleVideoLoaded}
-              onTimeUpdate={handleTimeUpdate}
-              className={scanPhase === 'review' ? 'hidden' : 'hidden'}
-              style={{ position: 'absolute', pointerEvents: 'none', width: 1, height: 1, opacity: 0 }}
-              playsInline
-              muted
-            />
-          )}
-
           {!videoUrl ? (
             <div className="flex-1 flex items-center justify-center text-muted-foreground">
               <div className="text-center space-y-3">
