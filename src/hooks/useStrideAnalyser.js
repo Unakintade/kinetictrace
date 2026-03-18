@@ -165,7 +165,18 @@ export function analyseStrides(poseHistory, pixelsPerMeter, videoDims, labelThre
   const result = analyzeStridesPose(frames, pixelsPerMeter, fps);
 
   // ── Stance events ────────────────────────────────────────────────────────
-  const stanceEvents = buildStanceEvents(result.frames || []);
+  const rawStanceEvents = buildStanceEvents(result.frames || []);
+  // Annotate each stance event with nearest reference frame phase (if available)
+  const stanceEvents = rawStanceEvents.map(ev => {
+    const ref = nearestRefFrame(referenceFrames, ev.t);
+    if (!ref) return ev;
+    return {
+      ...ev,
+      refPhase: ev.leg === 'left' ? ref.leftPhase : ref.rightPhase,
+      refLeftPhase:  ref.leftPhase,
+      refRightPhase: ref.rightPhase,
+    };
+  });
 
   // ── Stride metrics ───────────────────────────────────────────────────────
   const strideMetrics = (result.strideEvents || []).map((se) => ({
