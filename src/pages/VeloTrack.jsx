@@ -412,7 +412,7 @@ export default function VeloTrack() {
                 stanceEvents={strideAnalysis.stanceEvents}
                 seekTime={seekTime}
                 onSeek={handleSeek}
-                referenceFrames={gaitLabels?.frames}
+                referenceFrames={activeGaitSession?.frames}
               />
             </div>
           </div>
