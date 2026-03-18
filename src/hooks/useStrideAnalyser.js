@@ -177,7 +177,7 @@ export function analyseStrides(poseHistory, pixelsPerMeter, videoDims) {
   // A contact event spans from the frame where the ankle is first "down" to when it lifts.
   // We use the same peak logic: near-peak frames within ±MIN_STRIDE_DT/2 window.
   const buildContactDurations = (frames, yNorm, times) => {
-    const threshold = 0.75; // top 25% Y values = foot near ground
+    const threshold = 0.25; // bottom 25% Y values = minimum ankle Y = stance/ground contact
     const maxY = Math.max(...yNorm);
     const minY = Math.min(...yNorm);
     const range = Math.max(maxY - minY, 0.01);
