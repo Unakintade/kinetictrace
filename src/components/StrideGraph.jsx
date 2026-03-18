@@ -79,7 +79,7 @@ export default function StrideGraph({ windowedMetrics, strideMetrics, onSeek, se
           width={38}
           label={{ value: 'str/s', angle: 90, position: 'insideRight', fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
         />
-        <Tooltip content={(props) => <CustomTooltip {...props} />} />
+        <Tooltip content={<CustomTooltip />} />
         <Legend
           wrapperStyle={{ fontSize: 11, paddingTop: 8 }}
           formatter={(value) => <span style={{ color: 'hsl(var(--muted-foreground))' }}>{value}</span>}
