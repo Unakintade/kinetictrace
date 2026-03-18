@@ -332,7 +332,7 @@ const VelocityCanvas = forwardRef(function VelocityCanvas(
         ref={canvasRef}
         onClick={handleClick}
         className="w-full rounded-lg border border-border/50 canvas-crosshair"
-        style={{ background: 'hsl(220 18% 9%)' }}
+        style={{ background: 'hsl(220 18% 9%)', filter: 'contrast(1.08) saturate(1.1)' }}
       />
       {cameraGeo && (
         <button
