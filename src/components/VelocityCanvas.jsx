@@ -8,6 +8,7 @@ const VelocityCanvas = forwardRef(function VelocityCanvas(
   ref
 ) {
   const canvasRef = useRef(null);
+  const sharpCanvasRef = useRef(document.createElement('canvas')); // offscreen sharpening canvas
   const latestPoseRef = useRef(null);
   const videoRef = useRef(null);
   const animFrameRef = useRef(null);
