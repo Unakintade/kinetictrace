@@ -137,11 +137,27 @@ const VelocityCanvas = forwardRef(function VelocityCanvas(
         const now = Date.now();
         if (now - lastAutoRef.current > 100) {
           lastAutoRef.current = now;
-          detectPerson(video).then(pose => {
+          // Sharpen at half resolution for speed, detector handles the rescale internally
+          const sw = Math.round(w / 2);
+          const sh = Math.round(h / 2);
+          const sharpened = sharpenFrame(video, sw, sh, sharpCanvasRef.current);
+          detectPerson(sharpened).then(pose => {
             if (!pose) return;
-            latestPoseRef.current = pose;
-            onAutoTrackPoint(pose.hipCenter);
-            if (onPoseDetected) onPoseDetected(pose);
+            // Scale keypoints back up to full resolution
+            const scale = w / sw;
+            const scaleKp = kp => kp ? { x: kp.x * scale, y: kp.y * scale, score: kp.score } : null;
+            const scaledPose = {
+              hipCenter: { x: pose.hipCenter.x * scale, y: pose.hipCenter.y * scale },
+              leftHip:   scaleKp(pose.leftHip),
+              rightHip:  scaleKp(pose.rightHip),
+              leftKnee:  scaleKp(pose.leftKnee),
+              rightKnee: scaleKp(pose.rightKnee),
+              leftAnkle: scaleKp(pose.leftAnkle),
+              rightAnkle:scaleKp(pose.rightAnkle),
+            };
+            latestPoseRef.current = scaledPose;
+            onAutoTrackPoint(scaledPose.hipCenter);
+            if (onPoseDetected) onPoseDetected(scaledPose);
           });
         }
       }
