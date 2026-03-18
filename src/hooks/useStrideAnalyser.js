@@ -188,10 +188,10 @@ export function analyseStrides(poseHistory, pixelsPerMeter, videoDims) {
     let contactStart = null;
 
     for (let i = 0; i < norm.length; i++) {
-      if (!inContact && norm[i] >= threshold) {
+      if (!inContact && norm[i] <= threshold) {
         inContact = true;
         contactStart = times[i];
-      } else if (inContact && norm[i] < threshold) {
+      } else if (inContact && norm[i] > threshold) {
         inContact = false;
         const dur = times[i] - contactStart;
         if (dur > 0.05 && dur < 2) {
