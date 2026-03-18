@@ -260,7 +260,7 @@ export function analyseStrides(poseHistory, pixelsPerMeter, videoDims) {
 
   const strideDebug =
     strideMetrics.length === 0
-      ? `need_2_footstrikes_per_leg (L:${leftPeaks.length} R:${rightPeaks.length})`
+      ? `need_2_stance_troughs_per_leg (L:${leftPeaks.length} R:${rightPeaks.length})`
       : null;
 
   return {
