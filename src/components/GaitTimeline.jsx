@@ -117,33 +117,53 @@ export default function GaitTimeline({ stanceEvents, seekTime, onSeek, strideDeb
         className="flex-1 flex flex-col gap-1.5 relative cursor-pointer"
         onClick={handleClick}
       >
-        {lanes.map(({ label, phases }) => (
-          <div key={label} className="flex items-center gap-2 flex-1">
-            <span className="text-xs text-muted-foreground w-8 shrink-0 text-right">{label}</span>
-            <div className="relative flex-1 h-full rounded overflow-hidden bg-muted/30 border border-border/40">
-              {phases.map((ph, i) => {
-                const left  = toPercent(ph.start);
-                const width = toPercent(ph.end) - left;
-                const { fill } = PHASE_COLORS[ph.type] || {};
-                return (
+        {lanes.map(({ label, phases }) => {
+          const legKey = label.toLowerCase();
+          const refPhaseKey = `${legKey}Phase`;
+          return (
+            <div key={label} className="flex items-center gap-2 flex-1">
+              <span className="text-xs text-muted-foreground w-8 shrink-0 text-right">{label}</span>
+              <div className="relative flex-1 h-full rounded overflow-hidden bg-muted/30 border border-border/40">
+                {/* Live gait phases */}
+                {phases.map((ph, i) => {
+                  const left  = toPercent(ph.start);
+                  const width = toPercent(ph.end) - left;
+                  const { fill } = PHASE_COLORS[ph.type] || {};
+                  return (
+                    <div
+                      key={i}
+                      className="absolute top-0 bottom-0 rounded-sm"
+                      style={{ left: `${left}%`, width: `${Math.max(width, 0.3)}%`, background: fill, opacity: 0.85 }}
+                      title={`${PHASE_COLORS[ph.type]?.label} ${ph.start.toFixed(2)}s–${ph.end.toFixed(2)}s`}
+                    />
+                  );
+                })}
+                {/* Reference frame phase dots (bottom strip) */}
+                {referenceFrames?.map((rf, i) => {
+                  const phase = rf[refPhaseKey];
+                  if (!phase) return null;
+                  const pct = toPercent(rf.t);
+                  if (pct < 0 || pct > 100) return null;
+                  return (
+                    <div
+                      key={i}
+                      className="absolute bottom-0 w-1 rounded-t-sm z-10"
+                      style={{ left: `${pct}%`, height: '35%', background: getPhaseColor(phase), opacity: 0.9 }}
+                      title={`Ref: ${getPhaseLabel(phase)} @ ${rf.t.toFixed(2)}s`}
+                    />
+                  );
+                })}
+                {/* Seek cursor */}
+                {seekTime != null && seekTime >= tMin && seekTime <= tMax && (
                   <div
-                    key={i}
-                    className="absolute top-0 bottom-0 rounded-sm"
-                    style={{ left: `${left}%`, width: `${Math.max(width, 0.3)}%`, background: fill, opacity: 0.85 }}
-                    title={`${PHASE_COLORS[ph.type]?.label} ${ph.start.toFixed(2)}s–${ph.end.toFixed(2)}s`}
+                    className="absolute top-0 bottom-0 w-px bg-primary z-10"
+                    style={{ left: `${toPercent(seekTime)}%` }}
                   />
-                );
-              })}
-              {/* Seek cursor */}
-              {seekTime != null && seekTime >= tMin && seekTime <= tMax && (
-                <div
-                  className="absolute top-0 bottom-0 w-px bg-primary z-10"
-                  style={{ left: `${toPercent(seekTime)}%` }}
-                />
-              )}
+                )}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
 
         {/* Time axis ticks */}
         <div className="relative h-4 ml-10">
