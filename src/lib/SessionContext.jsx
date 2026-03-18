@@ -2,18 +2,22 @@
  * SessionContext — shared state across VeloTrack and GaitLabeler.
  *
  * Holds:
- *   - videoFile / videoUrl  — the loaded video, survives page navigation
- *   - allGaitSessions       — list of saved GaitLabel records
- *   - activeGaitSession     — currently selected reference session
+ *   - videoFile / videoUrl / videoSource  — the loaded video, survives page navigation
+ *   - videoName                           — display name of the video
+ *   - allGaitSessions                     — list of saved GaitLabel records
+ *   - activeGaitSession                   — currently selected reference session
  */
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 
 const SessionContext = createContext(null);
 
 export function SessionProvider({ children }) {
-  const [videoFile, setVideoFile] = useState(null);
-  const [videoUrl, setVideoUrl]   = useState(null);
+  const [videoFile, setVideoFile]     = useState(null);
+  const [videoUrl, setVideoUrl]       = useState(null);
+  const [videoName, setVideoName]     = useState('');
+  // videoSource is the object VelocityCanvas expects: { type: 'upload', url } | { type: 'webcam', stream }
+  const [videoSource, setVideoSource] = useState(null);
 
   const [allGaitSessions, setAllGaitSessions]     = useState([]);
   const [activeGaitSession, setActiveGaitSession] = useState(null);
@@ -23,18 +27,34 @@ export function SessionProvider({ children }) {
     base44.entities.GaitLabel.list('-updated_date', 20).then(sessions => {
       const list = sessions ?? [];
       setAllGaitSessions(list);
-      if (!activeGaitSession && list[0]?.frames?.length) {
-        setActiveGaitSession(list[0]);
-      }
+      if (list[0]?.frames?.length) setActiveGaitSession(list[0]);
     }).catch(() => {});
   }, []);
 
-  /** Load a video file and create a stable object URL. */
+  /** Load a video file — creates a stable object URL and sets all video state. */
   const loadVideo = useCallback((file) => {
-    if (videoUrl) URL.revokeObjectURL(videoUrl);
     setVideoFile(file);
-    setVideoUrl(URL.createObjectURL(file));
-  }, [videoUrl]);
+    const url = URL.createObjectURL(file);
+    setVideoUrl(url);
+    setVideoName(file.name);
+    setVideoSource({ type: 'upload', url });
+  }, []);
+
+  /** Clear the video (e.g. when user removes it). */
+  const clearVideo = useCallback(() => {
+    setVideoFile(null);
+    setVideoUrl(null);
+    setVideoName('');
+    setVideoSource(null);
+  }, []);
+
+  /** Set a webcam stream as the video source. */
+  const loadWebcam = useCallback((stream) => {
+    setVideoFile(null);
+    setVideoUrl(null);
+    setVideoName('Webcam');
+    setVideoSource({ type: 'webcam', stream });
+  }, []);
 
   /** Called after saving/updating a session in the labeler. */
   const upsertSession = useCallback((saved) => {
@@ -46,7 +66,7 @@ export function SessionProvider({ children }) {
     setActiveGaitSession(saved);
   }, []);
 
-  /** Delete a session from state. */
+  /** Remove a session from state. */
   const removeSession = useCallback((id) => {
     setAllGaitSessions(prev => prev.filter(s => s.id !== id));
     setActiveGaitSession(prev => (prev?.id === id ? null : prev));
@@ -54,7 +74,8 @@ export function SessionProvider({ children }) {
 
   return (
     <SessionContext.Provider value={{
-      videoFile, videoUrl, loadVideo,
+      videoFile, videoUrl, videoName, videoSource,
+      loadVideo, clearVideo, loadWebcam,
       allGaitSessions, activeGaitSession, setActiveGaitSession,
       upsertSession, removeSession,
     }}>
