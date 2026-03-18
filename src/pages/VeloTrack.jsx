@@ -18,7 +18,7 @@ import { Activity, FlaskConical } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Link } from 'react-router-dom';
 import { deriveThresholdsFromLabels } from '@/lib/gaitPhases';
-import { base44 } from '@/api/base44Client';
+import { useSession } from '@/lib/SessionContext';
 
 export default function VeloTrack() {
   const [videoSource, setVideoSource] = useState(null);
