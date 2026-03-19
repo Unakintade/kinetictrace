@@ -36,14 +36,18 @@ export default function OpenCapAnalysis() {
     setSessionData(null);
     setTrialsData([]);
 
-    const session = await fetchOpenCap(`sessions/${sessionId.trim()}/`, token);
-    setSessionData(session);
+    try {
+      const session = await fetchOpenCap(`sessions/${sessionId.trim()}/`, token);
+      setSessionData(session);
 
-    // Fetch each trial's full data (for results/kinematics)
-    const trials = await Promise.all(
-      (session.trials ?? []).map(t => fetchOpenCap(`trials/${t.id}/`, token))
-    );
-    setTrialsData(trials);
+      // Fetch each trial's full data (for results/kinematics)
+      const trials = await Promise.all(
+        (session.trials ?? []).map(t => fetchOpenCap(`trials/${t.id}/`, token))
+      );
+      setTrialsData(trials);
+    } catch (e) {
+      setError(e.message ?? 'Failed to load session');
+    }
     setLoading(false);
   }, [token, sessionId]);
 
