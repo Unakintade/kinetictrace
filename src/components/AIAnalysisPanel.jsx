@@ -104,10 +104,7 @@ Tasks:
 Be direct and specific. Format using markdown with bold headers.`;
 
     try {
-      const res = await base44.integrations.Core.InvokeLLM({
-        prompt,
-        model: 'claude_sonnet_4_6',
-      });
+      const res = await base44.integrations.Core.InvokeLLM({ prompt });
       setResult(typeof res === 'string' ? res : res?.response ?? JSON.stringify(res));
     } catch (e) {
       setError(e.message ?? 'Analysis failed');
