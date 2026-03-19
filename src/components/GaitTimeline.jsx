@@ -175,6 +175,9 @@ export default function GaitTimeline({ stanceEvents, seekTime, onSeek, strideDeb
     <div className="flex flex-col h-full select-none px-3 pb-2 pt-1 gap-1">
       {/* Legend */}
       <div className="flex items-center gap-4 flex-wrap">
+        {(labeledLeftPhases || labeledRightPhases) && (
+          <span className="text-[10px] text-accent border border-accent/30 rounded px-1.5 py-0.5 font-medium">✦ Label-calibrated</span>
+        )}
         {Object.entries(PHASE_COLORS).map(([key, { fill, label }]) => (
           <div key={key} className="flex items-center gap-1.5">
             <div className="w-3 h-3 rounded-sm" style={{ background: fill }} />
