@@ -9,7 +9,9 @@
  *   stance ≈ 60% of stride time, swing ≈ 40% (typical running approximation)
  */
 
-const STANCE_RATIO = 0.62; // fraction of stride that is stance phase
+// For running, stance is ~20-40% of the full gait cycle (same-leg to same-leg).
+// We cap stance duration using the next contralateral footstrike to enforce alternation.
+const MAX_STANCE_MS = 0.35; // max stance as fraction of same-leg stride period
 
 const GAIT_DEBUG_HINTS = {
   no_pose_history: 'Start tracking to record pose data.',
