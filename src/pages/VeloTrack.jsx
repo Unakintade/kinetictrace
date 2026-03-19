@@ -247,6 +247,13 @@ export default function VeloTrack() {
             <FlaskConical className="w-3.5 h-3.5" />
             Gait Labeler
           </Link>
+          <Link
+            to="/OpenCapAnalysis"
+            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground border border-border/50 rounded px-2 py-1 transition-colors"
+          >
+            <BarChart2 className="w-3.5 h-3.5" />
+            OpenCap
+          </Link>
           {allGaitSessions.length > 0 && (
             <div className="flex items-center gap-2">
               <Select
