@@ -106,15 +106,7 @@ export default function VeloTrack() {
     return analyseStrides(poseHistory, pixelsPerMeter, videoDims, labelThresholds, refFrames);
   }, [poseHistory, pixelsPerMeter, videoDims, activeGaitSession]);
 
-  // Auto-stop once we have ≥4 strides per leg detected
-  useEffect(() => {
-    if (!isTracking) return;
-    const leftStrides  = strideAnalysis.stanceEvents?.filter(e => e.leg === 'left').length  ?? 0;
-    const rightStrides = strideAnalysis.stanceEvents?.filter(e => e.leg === 'right').length ?? 0;
-    if (leftStrides >= 2 && rightStrides >= 2) {
-      stopTracking();
-    }
-  }, [strideAnalysis.stanceEvents, isTracking]);
+
 
   const getVideoTime = useCallback(() => {
     const video = canvasRef.current?.getVideo?.();
