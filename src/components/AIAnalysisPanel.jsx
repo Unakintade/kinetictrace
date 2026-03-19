@@ -32,7 +32,7 @@ function summariseData({ strideMetrics, velocityData, asymmetry, leftContactDura
   const avgLen  = avg(clean, 'strideLength');
   const avgFreq = avg(clean, 'strideFreq');
   const peakSpd = max(velocityData, 'speed');
-  const avgSpd  = avg(velocityData.map(d => d.speed).filter(Boolean));
+  const avgSpd  = avg(velocityData, 'speed');
 
   const avgLCT = avg(leftContactDurations,  'duration');
   const avgRCT = avg(rightContactDurations, 'duration');
