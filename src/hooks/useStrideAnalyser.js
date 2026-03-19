@@ -197,10 +197,12 @@ export function analyseStrides(poseHistory, pixelsPerMeter, videoDims, labelThre
   });
 
   // ── Stride metrics ───────────────────────────────────────────────────────
+  // PoseAnalysis measures same-foot-to-same-foot (full gait cycle = 2 steps).
+  // Convert to step metrics: halve length, double frequency.
   const strideMetrics = (result.strideEvents || []).map((se) => ({
     t:            parseFloat(Number(se.time).toFixed(2)),
-    strideLength: parseFloat(Number(se.strideLength).toFixed(3)),
-    strideFreq:   parseFloat(Number(se.strideFrequency).toFixed(3)),
+    strideLength: parseFloat((Number(se.strideLength) / 2).toFixed(3)),
+    strideFreq:   parseFloat((Number(se.strideFrequency) * 2).toFixed(3)),
   })).sort((a, b) => a.t - b.t);
 
   // Windowed (per-second) averages
