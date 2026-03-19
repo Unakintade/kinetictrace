@@ -158,8 +158,26 @@ export function analyseStrides(poseHistory, pixelsPerMeter, videoDims, labelThre
     return true;
   });
 
-  // Convert to PoseAnalysis frame format: { time, pose }
-  const frames = unique.map(f => ({ time: f.t, pose: f.pose, ...f }));
+  // Convert to PoseAnalysis frame format — flatten pose keypoints into top-level fields
+  const frames = unique.map(f => {
+    const p = f.pose;
+    return {
+      time: f.t,
+      pose: p,
+      leftHipX:    p?.leftHip?.x    ?? 0,
+      leftHipY:    p?.leftHip?.y    ?? 0,
+      rightHipX:   p?.rightHip?.x   ?? 0,
+      rightHipY:   p?.rightHip?.y   ?? 0,
+      leftKneeX:   p?.leftKnee?.x   ?? 0,
+      leftKneeY:   p?.leftKnee?.y   ?? 0,
+      rightKneeX:  p?.rightKnee?.x  ?? 0,
+      rightKneeY:  p?.rightKnee?.y  ?? 0,
+      leftAnkleX:  p?.leftAnkle?.x  ?? 0,
+      leftAnkleY:  p?.leftAnkle?.y  ?? 0,
+      rightAnkleX: p?.rightAnkle?.x ?? 0,
+      rightAnkleY: p?.rightAnkle?.y ?? 0,
+    };
+  });
 
   const fps = estimateFps(frames);
   const result = analyzeStridesPose(frames, pixelsPerMeter, fps);
