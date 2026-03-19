@@ -36,21 +36,39 @@ const PHASE_COLORS = {
   swing_right:  { fill: 'hsl(25 90% 25%)',   label: 'R Swing'  },
 };
 
+/**
+ * Build phases for one leg ensuring alternation with the other leg.
+ * Stance ends at whichever comes first:
+ *   - the next opposite-leg footstrike (enforces no overlap), OR
+ *   - MAX_STANCE_MS fraction of the same-leg stride period
+ */
 function buildPhases(stanceEvents, leg) {
-  const events = stanceEvents.filter(e => e.leg === leg).sort((a, b) => a.t - b.t);
+  const thisLeg  = stanceEvents.filter(e => e.leg === leg).sort((a, b) => a.t - b.t);
+  const otherLeg = stanceEvents.filter(e => e.leg !== leg).sort((a, b) => a.t - b.t);
+
   const phases = [];
-  for (let i = 0; i < events.length; i++) {
-    const curr = events[i];
-    const next = events[i + 1];
-    if (!next) {
-      // Last event — show a short stance marker only
-      phases.push({ type: `stance_${leg}`, start: curr.t, end: curr.t + 0.15 });
+  for (let i = 0; i < thisLeg.length; i++) {
+    const curr     = thisLeg[i];
+    const nextSame = thisLeg[i + 1];
+
+    // Find the first contralateral strike AFTER this footstrike
+    const nextOther = otherLeg.find(e => e.t > curr.t);
+
+    if (!nextSame) {
+      // Last event — short stance stub
+      phases.push({ type: `stance_${leg}`, start: curr.t, end: curr.t + 0.12 });
       break;
     }
-    const strideDt = next.t - curr.t;
-    const stanceEnd = curr.t + strideDt * STANCE_RATIO;
+
+    const sameLegDt = nextSame.t - curr.t;
+    // Stance ends at contralateral strike, but never beyond MAX_STANCE_MS of full stride
+    const maxStanceEnd = curr.t + sameLegDt * MAX_STANCE_MS;
+    const stanceEnd = nextOther
+      ? Math.min(nextOther.t, maxStanceEnd)
+      : maxStanceEnd;
+
     phases.push({ type: `stance_${leg}`, start: curr.t,    end: stanceEnd });
-    phases.push({ type: `swing_${leg}`,  start: stanceEnd, end: next.t    });
+    phases.push({ type: `swing_${leg}`,  start: stanceEnd, end: nextSame.t });
   }
   return phases;
 }
