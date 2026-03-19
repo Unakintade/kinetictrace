@@ -114,11 +114,17 @@ Be direct and specific. Format using markdown with bold headers.`;
   };
 
   return (
-    <div className="border-t border-border/50 bg-card/20">
-      <div className="flex items-center justify-between px-4 py-3">
-        <div className="flex items-center gap-2">
-          <Sparkles className="w-4 h-4 text-accent" />
-          <p className="text-xs text-muted-foreground uppercase tracking-widest font-medium">AI Sprint Analysis</p>
+    <div className="border-t border-border/50 bg-card/20 mx-4 my-4 rounded-xl border border-border/40 overflow-hidden">
+      {/* Header */}
+      <div className="flex items-center justify-between px-5 py-4 bg-card/40">
+        <div className="flex items-center gap-2.5">
+          <div className="w-7 h-7 rounded-lg bg-accent/10 border border-accent/20 flex items-center justify-center shrink-0">
+            <Sparkles className="w-3.5 h-3.5 text-accent" />
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-foreground">AI Sprint Analysis</p>
+            <p className="text-xs text-muted-foreground">Biomechanical feedback vs world-class benchmarks</p>
+          </div>
         </div>
         <div className="flex items-center gap-2">
           {!hasData && (
@@ -127,25 +133,28 @@ Be direct and specific. Format using markdown with bold headers.`;
           <Button
             size="sm"
             variant="outline"
-            className="border-accent/40 text-accent hover:bg-accent/10 h-7 text-xs"
+            className="border-accent/40 text-accent hover:bg-accent/10 h-8 text-xs px-3"
             disabled={!hasData || loading}
             onClick={runAnalysis}
           >
-            {loading ? <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5 mr-1.5" />}
-            {loading ? 'Analysing…' : 'Analyse Performance'}
+            {loading
+              ? <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />Analysing…</>
+              : <><Sparkles className="w-3.5 h-3.5 mr-1.5" />{result ? 'Re-analyse' : 'Analyse Performance'}</>
+            }
           </Button>
           {result && (
-            <button onClick={() => setOpen(o => !o)} className="text-muted-foreground hover:text-foreground">
+            <button onClick={() => setOpen(o => !o)} className="text-muted-foreground hover:text-foreground p-1">
               {open ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
             </button>
           )}
         </div>
       </div>
 
+      {/* Body */}
       {open && (
-        <div className="px-4 pb-4">
+        <div className="px-5 py-4 border-t border-border/30">
           {loading && (
-            <div className="flex items-center gap-3 py-6 justify-center text-muted-foreground">
+            <div className="flex items-center gap-3 py-8 justify-center text-muted-foreground">
               <Loader2 className="w-5 h-5 animate-spin text-accent" />
               <span className="text-sm">Analysing biomechanics against world-class benchmarks…</span>
             </div>
@@ -157,11 +166,14 @@ Be direct and specific. Format using markdown with bold headers.`;
             </div>
           )}
           {result && (
-            <div className="prose prose-sm prose-invert max-w-none text-foreground/90
-              [&_h1]:text-sm [&_h1]:font-semibold [&_h1]:text-foreground [&_h1]:mt-3 [&_h1]:mb-1
-              [&_h2]:text-sm [&_h2]:font-semibold [&_h2]:text-foreground [&_h2]:mt-3 [&_h2]:mb-1
-              [&_h3]:text-xs [&_h3]:font-semibold [&_h3]:text-accent [&_h3]:mt-2 [&_h3]:mb-0.5
-              [&_strong]:text-accent [&_ul]:pl-4 [&_li]:text-xs [&_li]:my-0.5 [&_p]:text-xs [&_p]:my-1">
+            <div className="prose prose-sm prose-invert max-w-none
+              [&_h1]:text-sm [&_h1]:font-semibold [&_h1]:text-foreground [&_h1]:mt-5 [&_h1]:mb-2
+              [&_h2]:text-sm [&_h2]:font-semibold [&_h2]:text-foreground [&_h2]:mt-5 [&_h2]:mb-2 [&_h2]:border-b [&_h2]:border-border/30 [&_h2]:pb-1
+              [&_h3]:text-xs [&_h3]:font-semibold [&_h3]:text-accent [&_h3]:mt-3 [&_h3]:mb-1
+              [&_strong]:text-accent
+              [&_ul]:pl-5 [&_ul]:space-y-1
+              [&_li]:text-sm [&_li]:text-muted-foreground [&_li]:leading-relaxed
+              [&_p]:text-sm [&_p]:text-muted-foreground [&_p]:leading-relaxed [&_p]:my-1.5">
               <ReactMarkdown>{result}</ReactMarkdown>
             </div>
           )}
