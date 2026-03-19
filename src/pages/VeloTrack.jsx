@@ -14,7 +14,7 @@ import AsymmetryPanel from '../components/AsymmetryPanel';
 import VelocityAccelChart from '../components/VelocityAccelChart';
 import { warpPoint } from '../hooks/useHomography';
 import { analyseStrides } from '../hooks/useStrideAnalyser';
-import { Activity, FlaskConical } from 'lucide-react';
+import { Activity, FlaskConical, BarChart2 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Link } from 'react-router-dom';
 import { deriveThresholdsFromLabels } from '@/lib/gaitPhases';
