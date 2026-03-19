@@ -139,8 +139,11 @@ export default function GaitTimeline({ stanceEvents, seekTime, onSeek, strideDeb
     );
   }
 
-  const leftPhases  = buildPhases(stanceEvents, 'left');
-  const rightPhases = buildPhases(stanceEvents, 'right');
+  const labeledLeftPhases  = referenceFrames?.length ? buildPhasesFromLabels(referenceFrames, 'left')  : null;
+  const labeledRightPhases = referenceFrames?.length ? buildPhasesFromLabels(referenceFrames, 'right') : null;
+
+  const leftPhases  = labeledLeftPhases  ?? buildPhases(stanceEvents, 'left');
+  const rightPhases = labeledRightPhases ?? buildPhases(stanceEvents, 'right');
 
   const tMin = stanceEvents[0].t;
   const tMax = stanceEvents[stanceEvents.length - 1].t + 0.3;
