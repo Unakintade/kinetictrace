@@ -292,14 +292,14 @@ export function analyseStrides(poseHistory, pixelsPerMeter, videoDims, labelThre
   const asym = result.asymmetry || {};
   const asymmetry = {
     strideLength: {
-      pct:   asym.strideLengthAsymmetry     ?? 0,
-      left:  asym.leftAvgStrideLength       ?? 0,
-      right: asym.rightAvgStrideLength      ?? 0,
+      pct:   asym.strideLengthAsymmetry          ?? 0,
+      left:  (asym.leftAvgStrideLength  ?? 0) / 2,
+      right: (asym.rightAvgStrideLength ?? 0) / 2,
     },
     strideFreq: {
-      pct:   asym.strideFrequencyAsymmetry  ?? 0,
-      left:  asym.leftAvgStrideFrequency    ?? 0,
-      right: asym.rightAvgStrideFrequency   ?? 0,
+      pct:   asym.strideFrequencyAsymmetry        ?? 0,
+      left:  (asym.leftAvgStrideFrequency  ?? 0) * 2,
+      right: (asym.rightAvgStrideFrequency ?? 0) * 2,
     },
     contactTime: {
       pct:   asym.contactTimeAsymmetry      ?? 0,
