@@ -7,6 +7,7 @@ import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import VeloTrack from './pages/VeloTrack';
 import GaitLabeler from './pages/GaitLabeler';
+import OpenCapAnalysis from './pages/OpenCapAnalysis';
 import { SessionProvider } from '@/lib/SessionContext';
 
 const AuthenticatedApp = () => {
