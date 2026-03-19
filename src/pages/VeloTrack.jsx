@@ -12,13 +12,13 @@ import JointAnglesChart from '../components/JointAnglesChart';
 import ContactTimeChart from '../components/ContactTimeChart';
 import AsymmetryPanel from '../components/AsymmetryPanel';
 import VelocityAccelChart from '../components/VelocityAccelChart';
-import SprintAnalysis from '../components/SprintAnalysis';
 import { warpPoint } from '../hooks/useHomography';
 import { analyseStrides } from '../hooks/useStrideAnalyser';
 import { Activity, FlaskConical } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Link } from 'react-router-dom';
 import { deriveThresholdsFromLabels } from '@/lib/gaitPhases';
+import AIAnalysisPanel from '@/components/AIAnalysisPanel';
 import { useSession } from '@/lib/SessionContext';
 
 export default function VeloTrack() {
@@ -478,11 +478,14 @@ export default function VeloTrack() {
             </div>
           )}
 
-          {/* AI Sprint Analysis */}
-          <SprintAnalysis
-            strideAnalysis={strideAnalysis}
-            velocityData={velocityData.length >= 2 ? velocityData : (strideAnalysis.velocityData ?? [])}
-            poseHistory={poseHistory}
+          {/* AI Analysis */}
+          <AIAnalysisPanel
+            strideMetrics={strideAnalysis.strideMetrics}
+            velocityData={strideAnalysis.velocityData ?? []}
+            asymmetry={strideAnalysis.asymmetry}
+            leftContactDurations={strideAnalysis.leftContactDurations}
+            rightContactDurations={strideAnalysis.rightContactDurations}
+            jointAngles={strideAnalysis.jointAngles}
           />
         </main>
       </div>
