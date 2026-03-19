@@ -75,6 +75,53 @@ function buildPhases(stanceEvents, leg) {
 
 import { getPhaseColor, getPhaseLabel } from '@/lib/gaitPhases';
 
+/**
+ * Build fine-tuned phases from gait-labeler reference frames.
+ * touch_down → stance start, toe_off → stance end / swing start.
+ * Falls back to the inferred buildPhases() when no ref frames are present.
+ */
+function buildPhasesFromLabels(referenceFrames, leg) {
+  const phaseKey = `${leg}Phase`;
+  // Only use frames that have a label for this leg
+  const frames = referenceFrames
+    .filter(f => f[phaseKey])
+    .sort((a, b) => a.t - b.t);
+
+  if (frames.length < 2) return null; // not enough labeled data
+
+  const phases = [];
+  let i = 0;
+  while (i < frames.length) {
+    const f = frames[i];
+    const phase = f[phaseKey];
+
+    // Stance phases: touch_down, mid_stance
+    const isStance = phase === 'touch_down' || phase === 'mid_stance';
+    // Swing phases: toe_off, early_flight, mid_flight, late_flight
+    const isSwing  = phase === 'toe_off' || phase === 'early_flight' || phase === 'mid_flight' || phase === 'late_flight';
+
+    if (isStance) {
+      // Find where stance ends (first swing-phase frame after this)
+      let j = i + 1;
+      while (j < frames.length && (frames[j][phaseKey] === 'touch_down' || frames[j][phaseKey] === 'mid_stance')) j++;
+      const stanceEnd = j < frames.length ? frames[j].t : frames[i].t + 0.12;
+      phases.push({ type: `stance_${leg}`, start: f.t, end: stanceEnd });
+      i = j;
+    } else if (isSwing) {
+      // Find where swing ends (first stance-phase frame after this)
+      let j = i + 1;
+      while (j < frames.length && (frames[j][phaseKey] === 'toe_off' || frames[j][phaseKey] === 'early_flight' || frames[j][phaseKey] === 'mid_flight' || frames[j][phaseKey] === 'late_flight')) j++;
+      const swingEnd = j < frames.length ? frames[j].t : frames[i].t + 0.25;
+      phases.push({ type: `swing_${leg}`, start: f.t, end: swingEnd });
+      i = j;
+    } else {
+      i++;
+    }
+  }
+
+  return phases.length > 0 ? phases : null;
+}
+
 export default function GaitTimeline({ stanceEvents, seekTime, onSeek, strideDebug, referenceFrames }) {
   if (!stanceEvents || stanceEvents.length < 2) {
     const hint = gaitDebugHint(strideDebug);
