@@ -145,8 +145,9 @@ export default function GaitTimeline({ stanceEvents, seekTime, onSeek, strideDeb
   const leftPhases  = labeledLeftPhases  ?? buildPhases(stanceEvents, 'left');
   const rightPhases = labeledRightPhases ?? buildPhases(stanceEvents, 'right');
 
-  const tMin = stanceEvents[0].t;
-  const tMax = stanceEvents[stanceEvents.length - 1].t + 0.3;
+  const allPhaseTimes = [...leftPhases, ...rightPhases].flatMap(p => [p.start, p.end]);
+  const tMin = Math.min(stanceEvents[0].t, ...allPhaseTimes);
+  const tMax = Math.max(stanceEvents[stanceEvents.length - 1].t, ...allPhaseTimes) + 0.3;
   const tSpan = tMax - tMin;
 
   const toPercent = (t) => ((t - tMin) / tSpan) * 100;
