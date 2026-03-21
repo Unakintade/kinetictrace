@@ -9,12 +9,13 @@ import { Upload, Play, Square, Loader2 } from 'lucide-react';
 const SCAN_INTERVAL_S = 1 / 30; // 30 fps scan
 const MIN_CONFIDENCE = 0.1;
 
-export default function VideoProcessor({ detector, onFramesReady, onProgress, disabled }) {
+export default function VideoProcessor({ detector, onFramesReady, onProgress, disabled, videoRef: externalVideoRef }) {
   const [videoUrl, setVideoUrl] = useState(null);
   const [videoName, setVideoName] = useState('');
   const [fps, setFps] = useState(30);
   const [scanning, setScanning] = useState(false);
-  const videoRef = useRef(null);
+  const internalRef = useRef(null);
+  const videoRef = externalVideoRef ?? internalRef;
   const cancelRef = useRef(false);
 
   const handleFile = (e) => {

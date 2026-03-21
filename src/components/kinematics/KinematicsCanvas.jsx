@@ -149,83 +149,90 @@ function drawMuJoCoFigure(ctx, qpos, scale, offX, offY, heightPx) {
 
 export default function KinematicsCanvas({ videoRef, currentFrameIdx, filteredFrames, qposHistory, scale }) {
   const canvasRef = useRef(null);
-
-  const draw = useCallback(() => {
-    const canvas = canvasRef.current;
-    const video = videoRef?.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    const W = canvas.width;
-    const H = canvas.height;
-    const halfW = W / 2;
-
-    ctx.fillStyle = 'hsl(220 18% 6%)';
-    ctx.fillRect(0, 0, W, H);
-
-    // ── LEFT: video + skeleton ──
-    if (video && video.readyState >= 2) {
-      ctx.drawImage(video, 0, 0, halfW, H);
-    } else {
-      ctx.fillStyle = 'hsl(220 15% 10%)';
-      ctx.fillRect(0, 0, halfW, H);
-      ctx.fillStyle = 'hsl(210 15% 35%)';
-      ctx.font = '13px Inter,sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('Video', halfW / 2, H / 2);
-    }
-
-    // Scale skeleton landmarks to left panel
-    const frame = filteredFrames?.[currentFrameIdx];
-    if (frame?.landmarks && video) {
-      const scaleX = halfW / (frame.videoW ?? video.videoWidth ?? halfW);
-      const scaleY = H / (frame.videoH ?? video.videoHeight ?? H);
-      const scaled = frame.landmarks.map(lm => ({ ...lm, x: lm.x * scaleX, y: lm.y * scaleY }));
-      drawSkeleton(ctx, scaled, halfW, H);
-    }
-
-    // Left panel label
-    ctx.fillStyle = 'rgba(0,0,0,0.5)';
-    ctx.fillRect(0, 0, halfW, 22);
-    ctx.fillStyle = '#ccc';
-    ctx.font = '11px Inter,sans-serif';
-    ctx.textAlign = 'left';
-    ctx.fillText('  BlazePose Input', 6, 15);
-
-    // Divider
-    ctx.strokeStyle = 'hsl(220 15% 20%)';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(halfW, 0);
-    ctx.lineTo(halfW, H);
-    ctx.stroke();
-
-    // ── RIGHT: MuJoCo stick figure ──
-    ctx.fillStyle = 'hsl(220 15% 10%)';
-    ctx.fillRect(halfW, 0, halfW, H);
-
-    const qpos = qposHistory?.[currentFrameIdx];
-    if (qpos && scale) {
-      drawMuJoCoFigure(ctx, qpos, scale, halfW + halfW / 2 - 50, 10, H - 20);
-    } else {
-      ctx.fillStyle = 'hsl(210 15% 35%)';
-      ctx.font = '13px Inter,sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('MuJoCo IK', halfW + halfW / 2, H / 2);
-    }
-
-    // Right panel label
-    ctx.fillStyle = 'rgba(0,0,0,0.5)';
-    ctx.fillRect(halfW, 0, halfW, 22);
-    ctx.fillStyle = '#ccc';
-    ctx.font = '11px Inter,sans-serif';
-    ctx.textAlign = 'left';
-    ctx.fillText(`  MuJoCo Physics IK  (frame ${currentFrameIdx + 1}/${qposHistory?.length ?? 0})`, halfW + 6, 15);
-  }, [videoRef, currentFrameIdx, filteredFrames, qposHistory, scale]);
+  // Keep a ref to current props so the rAF loop always sees latest values
+  const propsRef = useRef({});
+  propsRef.current = { videoRef, currentFrameIdx, filteredFrames, qposHistory, scale };
 
   useEffect(() => {
-    const id = requestAnimationFrame(draw);
-    return () => cancelAnimationFrame(id);
-  }, [draw]);
+    let rafId;
+    const loop = () => {
+      const { videoRef, currentFrameIdx, filteredFrames, qposHistory, scale } = propsRef.current;
+      const canvas = canvasRef.current;
+      const video = videoRef?.current;
+      if (!canvas) { rafId = requestAnimationFrame(loop); return; }
+
+      const ctx = canvas.getContext('2d');
+      const W = canvas.width;
+      const H = canvas.height;
+      const halfW = W / 2;
+
+      ctx.fillStyle = 'hsl(220 18% 6%)';
+      ctx.fillRect(0, 0, W, H);
+
+      // ── LEFT: video + skeleton ──
+      if (video && video.readyState >= 2) {
+        ctx.drawImage(video, 0, 0, halfW, H);
+      } else {
+        ctx.fillStyle = 'hsl(220 15% 10%)';
+        ctx.fillRect(0, 0, halfW, H);
+        ctx.fillStyle = 'hsl(210 15% 35%)';
+        ctx.font = '13px Inter,sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('Video', halfW / 2, H / 2);
+      }
+
+      // Scale skeleton landmarks to left panel
+      const frame = filteredFrames?.[currentFrameIdx];
+      if (frame?.landmarks && video) {
+        const sx = halfW / (frame.videoW ?? video.videoWidth ?? halfW);
+        const sy = H / (frame.videoH ?? video.videoHeight ?? H);
+        const scaled = frame.landmarks.map(lm => ({ ...lm, x: lm.x * sx, y: lm.y * sy }));
+        drawSkeleton(ctx, scaled, halfW, H);
+      }
+
+      // Left label
+      ctx.fillStyle = 'rgba(0,0,0,0.55)';
+      ctx.fillRect(0, 0, halfW, 22);
+      ctx.fillStyle = '#ccc';
+      ctx.font = '11px Inter,sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('  BlazePose Input', 6, 15);
+
+      // Divider
+      ctx.strokeStyle = 'hsl(220 15% 20%)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(halfW, 0);
+      ctx.lineTo(halfW, H);
+      ctx.stroke();
+
+      // ── RIGHT: MuJoCo stick figure ──
+      ctx.fillStyle = 'hsl(220 15% 10%)';
+      ctx.fillRect(halfW, 0, halfW, H);
+
+      const qpos = qposHistory?.[currentFrameIdx];
+      if (qpos && scale) {
+        drawMuJoCoFigure(ctx, qpos, scale, halfW + halfW / 2 - 50, 10, H - 20);
+      } else {
+        ctx.fillStyle = 'hsl(210 15% 35%)';
+        ctx.font = '13px Inter,sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('MuJoCo IK', halfW + halfW / 2, H / 2);
+      }
+
+      // Right label
+      ctx.fillStyle = 'rgba(0,0,0,0.55)';
+      ctx.fillRect(halfW, 0, halfW, 22);
+      ctx.fillStyle = '#ccc';
+      ctx.font = '11px Inter,sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText(`  MuJoCo Physics IK  (frame ${(currentFrameIdx ?? 0) + 1}/${qposHistory?.length ?? 0})`, halfW + 6, 15);
+
+      rafId = requestAnimationFrame(loop);
+    };
+    rafId = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(rafId);
+  }, []); // run once, loop reads from propsRef
 
   return (
     <canvas
