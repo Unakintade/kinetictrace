@@ -54,6 +54,7 @@ function drawMuJoCoFigure(ctx, qpos, scale, offX, offY, heightPx) {
   const ppm = (heightPx * 0.75) / bodyHeightM;
 
   // Convert 3D site position to canvas coords (right panel, Y flipped)
+  // offX is the horizontal centre of the right panel; x is relative displacement in metres
   const toC = (x, z) => ({
     cx: offX + x * ppm,
     cy: offY + heightPx - z * ppm,
