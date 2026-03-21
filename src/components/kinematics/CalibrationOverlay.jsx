@@ -187,39 +187,32 @@ export default function CalibrationOverlay({ videoRef, onCalibrationChange }) {
 }
 
 /**
- * Captures a static frame from the video onto a canvas for the overlay.
+ * Captures a live frame from the video via rAF so it always stays in sync.
  */
 function CalibrationFrameCapture({ videoRef }) {
   const canvasRef = useRef(null);
 
   useEffect(() => {
-    const v = videoRef?.current;
-    const c = canvasRef.current;
-    if (!v || !c) return;
-
-    const draw = () => {
-      if (v.readyState >= 2) {
-        c.width = v.videoWidth || 320;
-        c.height = v.videoHeight || 180;
+    let rafId;
+    const loop = () => {
+      const v = videoRef?.current;
+      const c = canvasRef.current;
+      if (v && c && v.readyState >= 2 && v.videoWidth > 0) {
+        if (c.width !== v.videoWidth) c.width = v.videoWidth;
+        if (c.height !== v.videoHeight) c.height = v.videoHeight;
         c.getContext('2d').drawImage(v, 0, 0);
       }
+      rafId = requestAnimationFrame(loop);
     };
-
-    // Draw on seek (pause video first for a stable frame)
-    v.addEventListener('seeked', draw);
-    v.addEventListener('loadeddata', draw);
-    draw();
-    return () => {
-      v.removeEventListener('seeked', draw);
-      v.removeEventListener('loadeddata', draw);
-    };
+    rafId = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(rafId);
   }, [videoRef]);
 
   return (
     <canvas
       ref={canvasRef}
       className="w-full block"
-      style={{ maxHeight: 160, objectFit: 'contain', background: '#000' }}
+      style={{ maxHeight: 160, background: '#000' }}
     />
   );
 }
