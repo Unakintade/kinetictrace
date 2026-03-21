@@ -192,19 +192,21 @@ export default function SprintKinematics() {
 
           {/* Calibration */}
           <div className="border-t border-border/30 pt-4 space-y-3">
-            <p className="text-xs text-muted-foreground uppercase tracking-widest font-medium">Calibration</p>
+            <CalibrationOverlay
+              videoRef={videoRef}
+              onCalibrationChange={(newPpm) => {
+                if (newPpm && newPpm > 0) setPpm(newPpm);
+              }}
+            />
             <div className="space-y-1">
-              <label className="text-[11px] text-muted-foreground">Pixels per meter</label>
+              <label className="text-[11px] text-muted-foreground">Pixels per meter (override)</label>
               <Input
                 type="number"
-                value={ppm}
+                value={Math.round(ppm)}
                 onChange={e => setPpm(Math.max(10, parseFloat(e.target.value) || DEFAULT_PPM))}
                 className="h-7 text-xs font-mono"
                 min={10}
               />
-              <p className="text-[10px] text-muted-foreground/60">
-                Measure a known distance in your video to calibrate
-              </p>
             </div>
             <div className="space-y-1">
               <label className="text-[11px] text-muted-foreground">Video FPS</label>
