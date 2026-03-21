@@ -3,7 +3,7 @@
  *   LEFT:  original video with BlazePose skeleton overlay
  *   RIGHT: stick-figure MuJoCo joint angle replay drawn on canvas
  */
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef } from 'react';
 
 const JOINT_NAMES = [
   'torso_x','torso_z',
