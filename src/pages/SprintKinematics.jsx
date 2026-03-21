@@ -23,6 +23,7 @@ import { batchKalmanFilter } from '@/hooks/useKalmanFilter';
 import VideoProcessor from '@/components/kinematics/VideoProcessor';
 import KinematicsCanvas from '@/components/kinematics/KinematicsCanvas';
 import KinematicsResults from '@/components/kinematics/KinematicsResults';
+import CalibrationOverlay from '@/components/kinematics/CalibrationOverlay';
 
 const WINDOW = 20;
 const DEFAULT_PPM = 200; // pixels per meter default (user can override)
