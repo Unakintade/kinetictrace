@@ -214,7 +214,8 @@ export default function KinematicsCanvas({ videoRef, currentFrameIdx, filteredFr
 
       const qpos = qposHistory?.[currentFrameIdx];
       if (qpos && scale) {
-        drawMuJoCoFigure(ctx, qpos, scale, halfW + halfW / 2 - 50, 10, H - 20);
+        // Centre figure horizontally in the right panel
+        drawMuJoCoFigure(ctx, qpos, scale, halfW + halfW / 2, 10, H - 20);
       } else {
         ctx.fillStyle = 'hsl(210 15% 35%)';
         ctx.font = '13px Inter,sans-serif';
