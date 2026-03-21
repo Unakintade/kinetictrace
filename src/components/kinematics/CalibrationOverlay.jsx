@@ -38,18 +38,24 @@ export default function CalibrationOverlay({ videoRef, onCalibrationChange }) {
   const [locked, setLocked] = useState(false);
   const [videoDims, setVideoDims] = useState({ w: 1, h: 1, naturalW: 1, naturalH: 1 });
 
-  // Update display dims when video loads / resizes
+  // Poll dims via rAF so we pick them up as soon as video loads/resizes
   useEffect(() => {
-    const v = videoRef?.current;
-    if (!v) return;
-    const update = () => {
-      const rect = v.getBoundingClientRect();
-      setVideoDims({ w: rect.width, h: rect.height, naturalW: v.videoWidth || rect.width, naturalH: v.videoHeight || rect.height });
+    let rafId;
+    const poll = () => {
+      const v = videoRef?.current;
+      if (v && v.videoWidth > 0) {
+        const overlay = overlayRef.current;
+        const w = overlay ? overlay.getBoundingClientRect().width : v.videoWidth;
+        const h = overlay ? overlay.getBoundingClientRect().height : v.videoHeight;
+        setVideoDims(prev => {
+          if (prev.naturalW === v.videoWidth && prev.w === w) return prev;
+          return { w: w || 1, h: h || 1, naturalW: v.videoWidth, naturalH: v.videoHeight };
+        });
+      }
+      rafId = requestAnimationFrame(poll);
     };
-    v.addEventListener('loadedmetadata', update);
-    window.addEventListener('resize', update);
-    update();
-    return () => { v.removeEventListener('loadedmetadata', update); window.removeEventListener('resize', update); };
+    rafId = requestAnimationFrame(poll);
+    return () => cancelAnimationFrame(rafId);
   }, [videoRef]);
 
   const handleClick = (e) => {
