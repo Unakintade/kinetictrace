@@ -94,17 +94,20 @@ export default function VideoProcessor({ detector, onFramesReady, onProgress, di
         <input type="file" accept="video/*" className="hidden" onChange={handleFile} />
       </label>
 
+      {/* Always in DOM so videoRef is always populated */}
+      <video
+        ref={videoRef}
+        src={videoUrl || undefined}
+        onLoadedMetadata={handleVideoMeta}
+        className="w-full rounded-lg border border-border/40 max-h-48 object-contain bg-black"
+        style={{ display: videoUrl ? 'block' : 'none' }}
+        playsInline
+        muted
+        controls
+      />
+
       {videoUrl && (
         <>
-          <video
-            ref={videoRef}
-            src={videoUrl}
-            onLoadedMetadata={handleVideoMeta}
-            className="w-full rounded-lg border border-border/40 max-h-48 object-contain bg-black"
-            playsInline
-            muted
-            controls
-          />
           <div className="flex gap-2">
             <Button
               size="sm"
