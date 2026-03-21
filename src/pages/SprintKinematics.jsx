@@ -186,6 +186,7 @@ export default function SprintKinematics() {
             onFramesReady={handleFramesReady}
             onProgress={setProgress}
             disabled={isProcessing || !poseReady}
+            videoRef={videoRef}
           />
 
           {/* Calibration */}
