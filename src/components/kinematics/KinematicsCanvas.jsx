@@ -49,7 +49,9 @@ function drawSkeleton(ctx, landmarks, w, h, color = '#00e5ff') {
 function drawMuJoCoFigure(ctx, qpos, scale, offX, offY, heightPx) {
   if (!qpos || !scale) return;
   const RAD = Math.PI / 180;
-  const ppm = heightPx / ((scale.femur + scale.tibia + scale.torso) * 1.6);
+  // Scale so full body height fills ~75% of panel height
+  const bodyHeightM = (scale.femur || 0.45) + (scale.tibia || 0.42) + (scale.torso || 0.55);
+  const ppm = (heightPx * 0.75) / bodyHeightM;
 
   // Convert 3D site position to canvas coords (right panel, Y flipped)
   const toC = (x, z) => ({
