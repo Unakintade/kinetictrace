@@ -37,6 +37,7 @@ const AuthenticatedApp = () => {
       <Route path="/VeloTrack" element={<VeloTrack />} />
       <Route path="/GaitLabeler" element={<GaitLabeler />} />
       <Route path="/OpenCapAnalysis" element={<OpenCapAnalysis />} />
+      <Route path="/SprintKinematics" element={<SprintKinematics />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );

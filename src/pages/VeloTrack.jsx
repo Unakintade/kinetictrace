@@ -254,6 +254,13 @@ export default function VeloTrack() {
             <BarChart2 className="w-3.5 h-3.5" />
             OpenCap
           </Link>
+          <Link
+            to="/SprintKinematics"
+            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground border border-border/50 rounded px-2 py-1 transition-colors"
+          >
+            <Cpu className="w-3.5 h-3.5" />
+            IK Solver
+          </Link>
           {allGaitSessions.length > 0 && (
             <div className="flex items-center gap-2">
               <Select
