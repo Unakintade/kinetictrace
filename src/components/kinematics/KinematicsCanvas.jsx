@@ -60,15 +60,16 @@ function drawMuJoCoFigure(ctx, qpos, scale, offX, offY, heightPx) {
     cy: offY + heightPx - z * ppm,
   });
 
-  const baseZ = (scale.femur + scale.tibia + 0.1);
-  const hipC = toC(qpos[0] ?? 0, baseZ);
+  // Use 0 as hip x-origin (pin to centre); qpos[0] is translation which we ignore for display
+  const baseZ = (scale.femur + scale.tibia + 0.05);
+  const hipC = toC(0, baseZ);
 
-  const tx = (qpos[0] ?? 0) * RAD;
-  const shoulderC = toC((qpos[0] ?? 0), baseZ + scale.torso * Math.cos(tx));
+  const tx = (qpos[1] ?? 0) * RAD; // torso tilt
+  const shoulderC = toC(scale.torso * Math.sin(tx), baseZ + scale.torso * Math.cos(tx));
 
   const lhx = (qpos[8] ?? 0) * RAD;
   const lk  = (qpos[10] ?? 0) * RAD;
-  const lKneeX = (qpos[0] ?? 0) + scale.femur * Math.sin(lhx);
+  const lKneeX = scale.femur * Math.sin(lhx);
   const lKneeZ = baseZ - scale.femur * Math.cos(lhx);
   const lAnkleX = lKneeX + scale.tibia * Math.sin(lhx + lk);
   const lAnkleZ = lKneeZ - scale.tibia * Math.cos(lhx + lk);
@@ -77,28 +78,31 @@ function drawMuJoCoFigure(ctx, qpos, scale, offX, offY, heightPx) {
 
   const rhx = (qpos[12] ?? 0) * RAD;
   const rk  = (qpos[14] ?? 0) * RAD;
-  const rKneeX = (qpos[0] ?? 0) + scale.femur * Math.sin(rhx);
+  const rKneeX = scale.femur * Math.sin(rhx);
   const rKneeZ = baseZ - scale.femur * Math.cos(rhx);
   const rAnkleX = rKneeX + scale.tibia * Math.sin(rhx + rk);
   const rAnkleZ = rKneeZ - scale.tibia * Math.cos(rhx + rk);
   const rKneeC  = toC(rKneeX, rKneeZ);
   const rAnkleC = toC(rAnkleX, rAnkleZ);
 
+  const shoulderX = scale.torso * Math.sin(tx);
+  const shoulderZ = baseZ + scale.torso * Math.cos(tx);
+
   const lsx = (qpos[2] ?? 0) * RAD;
   const le  = (qpos[4] ?? 0) * RAD;
-  const lElbowX = (qpos[0] ?? 0) - scale.humerus * Math.sin(lsx);
-  const lElbowZ = baseZ + scale.torso - scale.humerus * Math.cos(lsx);
-  const lWristX = lElbowX - scale.forearm * Math.sin(lsx - le);
-  const lWristZ = lElbowZ - scale.forearm * Math.cos(lsx - le);
+  const lElbowX = shoulderX - scale.humerus * Math.sin(lsx);
+  const lElbowZ = shoulderZ - scale.humerus * Math.cos(lsx);
+  const lWristX = lElbowX - scale.forearm * Math.sin(lsx + le);
+  const lWristZ = lElbowZ - scale.forearm * Math.cos(lsx + le);
   const lElbowC = toC(lElbowX, lElbowZ);
   const lWristC = toC(lWristX, lWristZ);
 
   const rsx = (qpos[5] ?? 0) * RAD;
   const re  = (qpos[7] ?? 0) * RAD;
-  const rElbowX = (qpos[0] ?? 0) + scale.humerus * Math.sin(rsx);
-  const rElbowZ = baseZ + scale.torso - scale.humerus * Math.cos(rsx);
-  const rWristX = rElbowX + scale.forearm * Math.sin(rsx - re);
-  const rWristZ = rElbowZ - scale.forearm * Math.cos(rsx - re);
+  const rElbowX = shoulderX + scale.humerus * Math.sin(rsx);
+  const rElbowZ = shoulderZ - scale.humerus * Math.cos(rsx);
+  const rWristX = rElbowX + scale.forearm * Math.sin(rsx + re);
+  const rWristZ = rElbowZ - scale.forearm * Math.cos(rsx + re);
   const rElbowC = toC(rElbowX, rElbowZ);
   const rWristC = toC(rWristX, rWristZ);
 
