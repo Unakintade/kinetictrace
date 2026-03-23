@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Upload, Play, Square, Loader2 } from 'lucide-react';
 
 const SCAN_INTERVAL_S = 1 / 30; // 30 fps scan
-const MIN_CONFIDENCE = 0.1;
+const MIN_CONFIDENCE = 0.3;
+const MIN_POSE_AVG_CONFIDENCE = 0.25; // skip frame if overall pose confidence too low
 
 export default function VideoProcessor({ detector, onFramesReady, onProgress, disabled, videoRef: externalVideoRef }) {
   const [videoUrl, setVideoUrl] = useState(null);
@@ -57,19 +58,22 @@ export default function VideoProcessor({ detector, onFramesReady, onProgress, di
           const poses = await detector.estimatePoses(v);
           if (poses?.length) {
             const kp = poses[0].keypoints;
-            rawFrames.push({
-              t,
-              videoH,
-              videoW,
-              landmarks: kp.map(k => ({
-                name: k.name,
-                x: k.x,
-                y: k.y,
-                z: k.z ?? 0,
-                score: k.score ?? 0,
-                visibility: k.score ?? 0,
-              })),
-            });
+            const avgConf = kp.reduce((s, k) => s + (k.score ?? 0), 0) / kp.length;
+            if (avgConf >= MIN_POSE_AVG_CONFIDENCE) {
+              rawFrames.push({
+                t,
+                videoH,
+                videoW,
+                landmarks: kp.map(k => ({
+                  name: k.name,
+                  x: k.x,
+                  y: k.y,
+                  z: k.z ?? 0,
+                  score: k.score ?? 0,
+                  visibility: k.score ?? 0,
+                })),
+              });
+            }
           }
         } catch (_) {}
       }
