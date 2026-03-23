@@ -177,8 +177,16 @@ export default function KinematicsCanvas({ videoRef, currentFrameIdx, filteredFr
       ctx.fillRect(0, 0, W, H);
 
       // ── LEFT: video + skeleton ──
-      if (video && video.readyState >= 2) {
-        ctx.drawImage(video, 0, 0, halfW, H);
+      let drawX = 0, drawY = 0, drawW = halfW, drawH = H;
+      if (video && video.readyState >= 2 && video.videoWidth > 0) {
+        const vw = video.videoWidth;
+        const vh = video.videoHeight;
+        const scale = Math.min(halfW / vw, H / vh);
+        drawW = vw * scale;
+        drawH = vh * scale;
+        drawX = (halfW - drawW) / 2;
+        drawY = (H - drawH) / 2;
+        ctx.drawImage(video, drawX, drawY, drawW, drawH);
       } else {
         ctx.fillStyle = 'hsl(220 15% 10%)';
         ctx.fillRect(0, 0, halfW, H);
@@ -188,12 +196,17 @@ export default function KinematicsCanvas({ videoRef, currentFrameIdx, filteredFr
         ctx.fillText('Video', halfW / 2, H / 2);
       }
 
-      // Scale skeleton landmarks to left panel
+      // Scale skeleton landmarks to letterboxed video region
       const frame = filteredFrames?.[currentFrameIdx];
-      if (frame?.landmarks && video) {
-        const sx = halfW / (frame.videoW ?? video.videoWidth ?? halfW);
-        const sy = H / (frame.videoH ?? video.videoHeight ?? H);
-        const scaled = frame.landmarks.map(lm => ({ ...lm, x: lm.x * sx, y: lm.y * sy }));
+      if (frame?.landmarks && video && video.videoWidth > 0) {
+        const vw = video.videoWidth;
+        const vh = video.videoHeight;
+        const scale = Math.min(halfW / vw, H / vh);
+        const sx = scale;
+        const sy = scale;
+        const ox = (halfW - vw * scale) / 2;
+        const oy = (H - vh * scale) / 2;
+        const scaled = frame.landmarks.map(lm => ({ ...lm, x: ox + lm.x * sx, y: oy + lm.y * sy }));
         drawSkeleton(ctx, scaled, halfW, H);
       }
 
