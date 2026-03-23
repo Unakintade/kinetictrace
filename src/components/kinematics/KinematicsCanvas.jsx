@@ -27,14 +27,14 @@ function drawSkeleton(ctx, landmarks, w, h, color = '#00e5ff') {
   for (const [a, b] of SKELETON) {
     const lA = landmarks[a];
     const lB = landmarks[b];
-    if (!lA || !lB || (lA.score ?? 1) < 0.1 || (lB.score ?? 1) < 0.1) continue;
+    if (!lA || !lB || (lA.score ?? 1) < 0.3 || (lB.score ?? 1) < 0.3) continue;
     ctx.beginPath();
     ctx.moveTo(lA.x, lA.y);
     ctx.lineTo(lB.x, lB.y);
     ctx.stroke();
   }
   for (const lm of landmarks) {
-    if ((lm.score ?? 1) < 0.1) continue;
+    if ((lm.score ?? 1) < 0.3) continue;
     ctx.beginPath();
     ctx.arc(lm.x, lm.y, 4, 0, Math.PI * 2);
     ctx.fillStyle = (lm.score ?? 1) > 0.5 ? '#00e5ff' : '#ff6b35';
